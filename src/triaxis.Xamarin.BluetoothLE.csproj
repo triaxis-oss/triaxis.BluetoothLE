@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;MonoAndroid90;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
-    <Version>1.0.0-alpha</Version>
+    <Version>1.0.0-alpha2</Version>
     <Authors>ssimek</Authors>
     <Company>triaxis s.r.o.</Company>
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>
@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <PackageReference Include="System.Reactive" Version="4.0.0" />
-    <PackageReference Include="Xamarin.Forms" Version="4.0.0.425677" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('MonoAndroid'))">

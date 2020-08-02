@@ -11,11 +11,8 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
-using Xamarin.Forms;
 
 using Application = Android.App.Application;
-
-[assembly: Dependency(typeof(triaxis.Xamarin.BluetoothLE.Android.Platform))]
 
 [assembly: UsesPermission("android.permission.BLUETOOTH")]
 [assembly: UsesPermission("android.permission.BLUETOOTH_ADMIN")]
@@ -24,11 +21,17 @@ using Application = Android.App.Application;
 
 namespace triaxis.Xamarin.BluetoothLE.Android
 {
-    class Platform : IBluetoothLE
+    /// <summary>
+    /// Platform-specific implementation of the <see cref="IBluetoothLE"/> interface for Android
+    /// </summary>
+    public class Platform : IBluetoothLE
     {
         ReplaySubject<IAdapter> _adapterSubject;
         IAdapter _adapter;
 
+        /// <summary>
+        /// Gets an observable returning values when Bluetooth LE adapter availability changes
+        /// </summary>
         public IObservable<IAdapter> WhenAdapterChanges()
             => _adapterSubject ?? (_adapterSubject = Init());
 

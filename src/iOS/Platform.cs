@@ -6,19 +6,25 @@ using System.Text;
 using CoreBluetooth;
 using Foundation;
 using UIKit;
-using Xamarin.Forms;
-
-[assembly: Dependency(typeof(triaxis.Xamarin.BluetoothLE.iOS.Platform))]
 
 namespace triaxis.Xamarin.BluetoothLE.iOS
 {
-    class Platform : IBluetoothLE
+    /// <summary>
+    /// Platform-specific implementation of the <see cref="IBluetoothLE"/> interface for iOS
+    /// </summary>
+    public class Platform : IBluetoothLE
     {
         ReplaySubject<IAdapter> _adapterSubject;
 
+        /// <summary>
+        /// Creates an instance of the platform-specific <see cref="IBluetoothLE"/> implementation
+        /// </summary>
         [Preserve]
         public Platform() { }
 
+        /// <summary>
+        /// Gets an observable returning values when Bluetooth LE adapter availability changes
+        /// </summary>
         public IObservable<IAdapter> WhenAdapterChanges()
             => _adapterSubject ?? (_adapterSubject = Init());
 

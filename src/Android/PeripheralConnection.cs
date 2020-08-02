@@ -23,6 +23,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         Task _tDisconnect;
         Task<IList<IService>> _tServics;
         OperationQueue _q = new OperationQueue();
+        SynchronizationContext _context;
 
         public event Action<BluetoothGattCharacteristic, byte[]> CharacteristicChanged;
         public event EventHandler<Exception> Closed;
@@ -33,6 +34,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public PeripheralConnection(Peripheral device)
         {
             _device = device;
+            _context = SynchronizationContext.Current;
         }
 
         public Task<IPeripheralConnection> ConnectAsync(Advertisement reference, int period, int before, int after, int attempts)
@@ -420,7 +422,14 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                     var handler = Closed;
                     if (handler != null)
                     {
-                        global::Xamarin.Forms.Device.BeginInvokeOnMainThread(() => handler(this, err));
+                        if (_context != null)
+                        {
+                            _context.Post(_ => handler(this, err), null);
+                        }
+                        else
+                        {
+                            handler(this, err);
+                        }
                     }
                     break;
             }
