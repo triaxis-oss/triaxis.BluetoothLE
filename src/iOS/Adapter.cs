@@ -12,9 +12,15 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 {
     class Adapter : CBCentralManagerDelegate, IAdapter
     {
+        private struct ScannerObserver
+        {
+            public IObserver<IAdvertisement> Observer { get; set; }
+            public HashSet<Guid> Services { get; set; }
+        }
+
         Platform _owner;
         CBCentralManager _central;
-        List<IObserver<IAdvertisement>> _scanners = new List<IObserver<IAdvertisement>>();
+        List<ScannerObserver> _scanners = new List<ScannerObserver>();
         Dictionary<Guid, Peripheral> _devices = new Dictionary<Guid, Peripheral>();
 
         public Adapter(Platform owner)
@@ -41,25 +47,50 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public CBCentralManager CentralManager => _central;
 
-        public IObservable<IAdvertisement> Scan() => Observable.Create<IAdvertisement>(sub =>
+        public IObservable<IAdvertisement> Scan() => ScanImpl(null);
+        
+        public IObservable<IAdvertisement> Scan(params Guid[] services) => ScanImpl(new HashSet<Guid>(services));
+        
+        private IObservable<IAdvertisement> ScanImpl(HashSet<Guid> services) => Observable.Create<IAdvertisement>(sub =>
         {
-            _scanners.Add(sub);
+            _scanners.Add(new ScannerObserver { Observer = sub, Services = services });
 
-            if (_scanners.Count == 1)
+            UpdateScan();
+
+            return () =>
             {
-                _central.ScanForPeripherals(null, new PeripheralScanningOptions
+                _scanners.RemoveAll(scn => scn.Observer == sub);
+
+                UpdateScan();
+            };
+        });
+
+        void UpdateScan()
+        {
+            if (_scanners.Count == 0)
+            {
+                _central.StopScan();
+            }
+            else
+            {
+                HashSet<Guid> services = null;
+
+                if (!_scanners.Any(scn => scn.Services == null))
+                {
+                    // all scanners want only specific services, create a union over all
+                    services = new HashSet<Guid>();
+                    foreach (var scn in _scanners)
+                    {
+                        services.UnionWith(scn.Services);
+                    }
+                }
+
+                _central.ScanForPeripherals(services?.Select(guid => CBUUID.FromBytes(guid.ToBytesBE())).ToArray(), new PeripheralScanningOptions
                 {
                     AllowDuplicatesKey = true,
                 });
             }
-
-            return () =>
-            {
-                _scanners.Remove(sub);
-                if (_scanners.Count == 0)
-                    _central.StopScan();
-            };
-        });
+        }
 
         Peripheral GetPeripheral(CBPeripheral peripheral)
         {
@@ -83,7 +114,13 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             var adv = new Advertisement(GetPeripheral(peripheral), advertisementData, rssi);
             foreach (var scanner in _scanners.ToArray())
-                scanner.OnNext(adv);
+            {
+                if (scanner.Services == null ||
+                    (adv.Services != null && scanner.Services.Overlaps(adv.Services)))
+                {
+                    scanner.Observer.OnNext(adv);
+                }
+            }
         }
 
         public override void FailedToConnectPeripheral(CBCentralManager central, CBPeripheral peripheral, NSError error)

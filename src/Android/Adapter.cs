@@ -24,6 +24,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 {
     class Adapter : IAdapter
     {
+        private struct ScanObserver
+        {
+            public IObserver<IAdvertisement> Observer { get; set; }
+            public HashSet<Guid> Services { get; set; }
+        }
+
         BluetoothAdapter _adapter;
         Dictionary<Guid, Peripheral> _peripherals;
 
@@ -31,14 +37,14 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         BluetoothLeScanner _scanner;
         ScanSettings _scanSettings;
         ScanCallbackImpl _scanCallback;
-        IObserver<IAdvertisement>[] _scanObservers;
+        ScanObserver[] _scanObservers;
         List<PeripheralConnection.ConnectOperation> _connectOps;
 
         public Adapter(BluetoothAdapter adapter)
         {
             _adapter = adapter;
             _peripherals = new Dictionary<Guid, Peripheral>();
-            _scanObservers = Array.Empty<IObserver<IAdvertisement>>();
+            _scanObservers = Array.Empty<ScanObserver>();
             _connectOps = new List<PeripheralConnection.ConnectOperation>();
 
             InitializeScanner();
@@ -115,13 +121,19 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
             {
                 var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes());
-                Array.ForEach(_adapter._scanObservers, obs => obs.OnNext(adv));
+                Array.ForEach(_adapter._scanObservers, obs => 
+                {
+                    if (obs.Services == null || (adv.Services != null && obs.Services.Overlaps(adv.Services)))
+                    {
+                        obs.Observer.OnNext(adv);
+                    }
+                });
             }
 
             public override void OnScanFailed(ScanFailure errorCode)
             {
                 var err = new ScanException(errorCode);
-                Array.ForEach(_adapter._scanObservers, obs => obs.OnError(err));
+                Array.ForEach(_adapter._scanObservers, obs => obs.Observer.OnError(err));
             }
         }
 
@@ -151,14 +163,18 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
         }
 
-        public IObservable<IAdvertisement> Scan() => Observable.Create<IAdvertisement>(sub =>
+        public IObservable<IAdvertisement> Scan() => ScanImpl(null);
+        
+        public IObservable<IAdvertisement> Scan(params Guid[] services) => ScanImpl(new HashSet<Guid>(services));
+        
+        private IObservable<IAdvertisement> ScanImpl(HashSet<Guid> services) => Observable.Create<IAdvertisement>(sub =>
         {
-            _scanObservers = _scanObservers.Append(sub);
+            _scanObservers = _scanObservers.Append(new ScanObserver { Observer = sub, Services = services });
             Reschedule();
 
             return () =>
             {
-                _scanObservers = _scanObservers.Remove(sub);
+                _scanObservers = _scanObservers.Remove(x => x.Observer == sub);
                 Reschedule();
             };
         });

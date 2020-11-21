@@ -25,6 +25,11 @@ namespace triaxis.Xamarin.BluetoothLE
         int TxPower { get; }
 
         /// <summary>
+        /// Retrieves the advertised services (if any)
+        /// </summary>
+        Guid[] Services { get; }
+
+        /// <summary>
         /// Retrieves the specified data from the advertisement
         /// </summary>
         byte[] this[AdvertisementRecord record] { get; }

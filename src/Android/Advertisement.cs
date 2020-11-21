@@ -19,6 +19,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         int _txPower;
         byte[] _data;
         int _time;
+        Guid[] _services;
 
         public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data)
         {
@@ -55,5 +56,41 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public int Rssi => _rssi;
         public int TxPower => _txPower;
         public int Time => _time;
+        public Guid[] Services => _services ??= ExtractServices();
+
+        private Guid[] ExtractServices()
+        {
+            int i = 0;
+            List<Guid> res = null;
+            while (i < _data.Length)
+            {
+                int len = _data[i];
+                if (len == 0 || i + len >= _data.Length)
+                    break;
+                int uuidLen = 0;
+                switch (_data[i + 1])
+                {
+                    case 2: case 3: // complete/incomplete 16-bit uids
+                        uuidLen = 2;
+                        break;
+                    case 4: case 5: // complete/incomplete 32-bit uuids
+                        uuidLen = 4;
+                        break;
+                    case 6: case 7: // complete/incomplete 128-bit uuids
+                        uuidLen = 16;
+                        break;
+                }
+                int n = i + 2;
+                i += 1 + len;
+                if (uuidLen > 0)
+                {
+                    for (; n + uuidLen <= i; n += uuidLen)
+                    {
+                        (res ??= new List<Guid>()).Add(_data.ToGuidLE(n, uuidLen));
+                    }
+                }
+            }
+            return res?.ToArray() ?? Array.Empty<Guid>();
+        }
     }
 }

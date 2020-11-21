@@ -25,5 +25,10 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         {
             throw new NotSupportedException();
         }
+
+        public IObservable<IAdvertisement> Scan(params Guid[] services)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

@@ -26,5 +26,20 @@ namespace triaxis.Xamarin.BluetoothLE
                 Array.Copy(array, index + 1, res, index, res.Length - index);
             return res;
         }
+
+        public static T[] Remove<T>(this T[] array, Predicate<T> predicate)
+        {
+            int index = Array.FindIndex(array, predicate);
+            if (index < 0)
+                return array;
+            if (array.Length == 1)
+                return Array.Empty<T>();
+            var res = new T[array.Length - 1];
+            if (index > 0)
+                Array.Copy(array, res, index);
+            if (index < res.Length)
+                Array.Copy(array, index + 1, res, index, res.Length - index);
+            return res;
+        }
     }
 }

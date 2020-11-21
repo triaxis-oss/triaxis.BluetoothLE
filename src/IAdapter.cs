@@ -37,5 +37,10 @@ namespace triaxis.Xamarin.BluetoothLE
         /// Gets an observable for scanning for peripherals in range
         /// </summary>
         IObservable<IAdvertisement> Scan();
+
+        /// <summary>
+        /// Gets an observable for scanning for peripherals in range, advertising the specified services
+        /// </summary>
+        IObservable<IAdvertisement> Scan(params Guid[] services);
     }
 }

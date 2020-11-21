@@ -15,6 +15,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         readonly int _txPower;
         readonly byte[] _localName;
         readonly byte[] _manufacturerData;
+        readonly Guid[] _services;
         
         public Advertisement(Peripheral device, NSDictionary advertisementData, NSNumber rssi)
         {
@@ -26,6 +27,18 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
                 _manufacturerData = data.ToArray();
             if (advertisementData[CBAdvertisement.DataTxPowerLevelKey] is NSNumber number)
                 _txPower = number.Int32Value;
+            if (advertisementData[CBAdvertisement.DataServiceUUIDsKey] is NSArray services)
+                _services = ExtractGuids(services);
+        }
+
+        private Guid[] ExtractGuids(NSArray array)
+        {
+            var res = new Guid[array.Count];
+            for (int i = 0; i < res.Length; i++)
+            {
+                res[i] = array.GetItem<CBUUID>((nuint)i).ToGuid();
+            }
+            return res;
         }
 
         public byte[] this[AdvertisementRecord record]
@@ -48,5 +61,6 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public int Rssi => _rssi;
         public int TxPower => _txPower;
+        public Guid[] Services => _services;
     }
 }
