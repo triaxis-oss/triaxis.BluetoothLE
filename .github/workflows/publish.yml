@@ -1,0 +1,29 @@
+name: publish nuget
+on:
+  push:
+    branches:
+      - master # Default release branch
+
+defaults:
+  run:
+    working-directory: src
+
+jobs:
+  publish:
+    name: Publish nuget
+    runs-on: macos-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - run: dotnet restore
+      - run: msbuild /t:build /p:Configuration=Release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packages
+          path: src/bin/Release/*nupkg
+      - run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+        working-directory: src/bin/Release
