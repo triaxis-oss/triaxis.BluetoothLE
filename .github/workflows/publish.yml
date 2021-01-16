@@ -24,6 +24,6 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: packages
-          path: src/bin/Release/*nupkg
+          path: src/triaxis.Xamarin.BluetoothLE/bin/Release/*nupkg
       - run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
-        working-directory: src/bin/Release
+        working-directory: src/triaxis.Xamarin.BluetoothLE/bin/Release
