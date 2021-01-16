@@ -1,12 +1,12 @@
 <Project Sdk="MSBuild.Sdk.Extras/2.1.2">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;MonoAndroid10.0;Xamarin.iOS10</TargetFrameworks>
+    <TargetFrameworks>MonoAndroid10.0;netstandard2.0;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
-    <Version>1.0.0-alpha3</Version>
+    <Version>1.0.0-beta1</Version>
     <Authors>ssimek</Authors>
     <Company>triaxis s.r.o.</Company>
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>
-    <Copyright>&#169; 2020 triaxis s.r.o.</Copyright>
+    <Copyright>&#169; 2021 triaxis s.r.o.</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <RepositoryUrl>https://github.com/ssimek/triaxis.Xamarin.BluetoothLE</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
