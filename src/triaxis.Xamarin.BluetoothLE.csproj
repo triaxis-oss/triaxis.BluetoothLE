@@ -8,7 +8,7 @@
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>
     <Copyright>&#169; 2021 triaxis s.r.o.</Copyright>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <RepositoryUrl>https://github.com/ssimek/triaxis.Xamarin.BluetoothLE</RepositoryUrl>
+    <RepositoryUrl>https://github.com/triaxis-oss/triaxis.Xamarin.BluetoothLE</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
