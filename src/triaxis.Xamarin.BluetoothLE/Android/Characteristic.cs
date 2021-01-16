@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -21,7 +21,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         Service _service;
         BluetoothGattCharacteristic _characteristic;
         BluetoothGattDescriptor _clientConfigDescriptor;
-        Guid _uuid;
+        readonly CharacteristicUuid _uuid;
 
         static readonly Java.Util.UUID s_uuidClientConfiguration =
             Java.Util.UUID.FromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -30,11 +30,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         {
             _service = service;
             _characteristic = characteristic;
-            _uuid = new Guid(characteristic.Uuid.ToString());
+            _uuid = new CharacteristicUuid(new Uuid(characteristic.Uuid.ToString()));
             _clientConfigDescriptor = characteristic.GetDescriptor(s_uuidClientConfiguration);
         }
 
-        public Guid Uuid => _uuid;
+        public ref readonly CharacteristicUuid Uuid => ref _uuid;
         public CharacteristicProperties Properties => (CharacteristicProperties)_characteristic.Properties;
         public Service Service => _service;
         public BluetoothGattCharacteristic SystemCharacteristic => _characteristic;

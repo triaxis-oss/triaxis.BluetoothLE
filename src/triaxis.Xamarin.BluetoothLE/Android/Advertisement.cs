@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,7 +19,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         int _txPower;
         byte[] _data;
         int _time;
-        Guid[] _services;
+        ServiceUuid[] _services;
 
         public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data)
         {
@@ -56,12 +56,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public int Rssi => _rssi;
         public int TxPower => _txPower;
         public int Time => _time;
-        public Guid[] Services => _services ??= ExtractServices();
+        public ServiceUuid[] Services => _services ??= ExtractServices();
 
-        private Guid[] ExtractServices()
+        private ServiceUuid[] ExtractServices()
         {
             int i = 0;
-            List<Guid> res = null;
+            List<ServiceUuid> res = null;
             while (i < _data.Length)
             {
                 int len = _data[i];
@@ -86,11 +86,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 {
                     for (; n + uuidLen <= i; n += uuidLen)
                     {
-                        (res ??= new List<Guid>()).Add(_data.ToGuidLE(n, uuidLen));
+                        (res ??= new List<ServiceUuid>()).Add(new ServiceUuid(Uuid.FromLE(_data.AsSpan(n, uuidLen))));
                     }
                 }
             }
-            return res?.ToArray() ?? Array.Empty<Guid>();
+            return res?.ToArray() ?? Array.Empty<ServiceUuid>();
         }
     }
 }

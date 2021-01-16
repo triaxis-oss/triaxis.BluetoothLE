@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using CoreBluetooth;
 using Foundation;
@@ -10,17 +11,16 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 {
     static class PrivateExtensions
     {
-        public static Guid ToGuid(this CBUUID uuid)
+        public static Uuid ToUuid(this CBUUID uuid)
         {
             var bytes = uuid.Data.ToArray();
-            if (bytes.Length == 2)
-            {
-                return ((bytes[0] << 8) | bytes[1]).ToBluetoothGuid();
-            }
-            else
-            {
-                return bytes.ToGuidBE();
-            }
+            return Uuid.FromBE(bytes);
+        }
+
+        public static Uuid ToUuid(this NSUuid uuid)
+        {
+            var bytes = uuid.GetBytes();
+            return Uuid.FromBE(bytes);
         }
     }
 }

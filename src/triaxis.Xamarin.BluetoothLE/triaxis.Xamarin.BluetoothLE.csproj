@@ -1,6 +1,6 @@
 <Project Sdk="MSBuild.Sdk.Extras/2.1.2">
   <PropertyGroup>
-    <TargetFrameworks>MonoAndroid10.0;netstandard2.0;Xamarin.iOS10</TargetFrameworks>
+    <TargetFrameworks>MonoAndroid10.0;netstandard2.1;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
     <Version>1.0.0-beta1</Version>
     <Authors>ssimek</Authors>

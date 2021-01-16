@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,18 +17,18 @@ namespace triaxis.Xamarin.BluetoothLE.Android
     {
         PeripheralConnection _connection;
         BluetoothGattService _service;
-        Guid _uuid;
+        readonly ServiceUuid _uuid;
         IList<ICharacteristic> _characteristics;
 
         public Service(PeripheralConnection connection, BluetoothGattService service)
         {
             _connection = connection;
             _service = service;
-            _uuid = new Guid(service.Uuid.ToString());
+            _uuid = new ServiceUuid(service.Uuid.ToUuid());
             _characteristics = _service.Characteristics.SelectArray(ch => new Characteristic(this, ch));
         }
 
-        public Guid Uuid => _uuid;
+        public ref readonly ServiceUuid Uuid => ref _uuid;
         public PeripheralConnection Connection => _connection;
         public BluetoothGattService SystemService => _service;
 

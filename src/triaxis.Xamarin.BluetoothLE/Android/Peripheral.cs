@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,12 +18,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
     class Peripheral : IPeripheral
     {
         Adapter _adapter;
-        Guid _uuid;
+        readonly Uuid _uuid;
         BluetoothDevice _device;
         HashSet<PeripheralConnection> _connections = new HashSet<PeripheralConnection>();
         int _invalidateCache;
 
-        public Peripheral(Adapter adapter, Guid uuid, BluetoothDevice device)
+        public Peripheral(Adapter adapter, Uuid uuid, BluetoothDevice device)
         {
             _adapter = adapter;
             _uuid = uuid;
@@ -31,10 +31,10 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         }
 
         public Adapter Adapter => _adapter;
-        public Guid Uuid => _uuid;
+        public ref readonly Uuid Uuid => ref _uuid;
         public byte[] HardwareAddress
         {
-            get => _uuid.ToByteArray().Skip(10).Reverse().ToArray();
+            get => _uuid.ToByteArrayLE().Take(6).ToArray();
             set { }
         }
         public BluetoothDevice Device => _device;

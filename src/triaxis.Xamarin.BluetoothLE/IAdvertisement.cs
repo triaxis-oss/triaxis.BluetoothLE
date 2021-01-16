@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -27,7 +27,7 @@ namespace triaxis.Xamarin.BluetoothLE
         /// <summary>
         /// Retrieves the advertised services (if any)
         /// </summary>
-        Guid[] Services { get; }
+        ServiceUuid[] Services { get; }
 
         /// <summary>
         /// Retrieves the specified data from the advertisement

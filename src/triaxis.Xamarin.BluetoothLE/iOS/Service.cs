@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,17 +13,17 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
     {
         PeripheralConnection _connection;
         CBService _service;
-        Guid _uuid;
+        readonly ServiceUuid _uuid;
         internal Task<IList<ICharacteristic>> _tCharacteristics;
 
         public Service(PeripheralConnection connection, CBService service)
         {
             _connection = connection;
             _service = service;
-            _uuid = service.UUID.ToGuid();
+            _uuid = service.UUID.ToUuid();
         }
 
-        public Guid Uuid => _uuid;
+        public ref readonly ServiceUuid Uuid => ref _uuid;
         public PeripheralConnection Connection => _connection;
         public CBService CBService => _service;
 

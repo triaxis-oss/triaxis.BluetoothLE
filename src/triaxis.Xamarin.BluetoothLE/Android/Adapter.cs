@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -27,11 +27,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         private struct ScanObserver
         {
             public IObserver<IAdvertisement> Observer { get; set; }
-            public HashSet<Guid> Services { get; set; }
+            public HashSet<ServiceUuid> Services { get; set; }
         }
 
         BluetoothAdapter _adapter;
-        Dictionary<Guid, Peripheral> _peripherals;
+        Dictionary<Uuid, Peripheral> _peripherals;
 
         bool _scanning;
         BluetoothLeScanner _scanner;
@@ -43,7 +43,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public Adapter(BluetoothAdapter adapter)
         {
             _adapter = adapter;
-            _peripherals = new Dictionary<Guid, Peripheral>();
+            _peripherals = new Dictionary<Uuid, Peripheral>();
             _scanObservers = Array.Empty<ScanObserver>();
             _connectOps = new List<PeripheralConnection.ConnectOperation>();
 
@@ -95,10 +95,9 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
         }
 
-        const string s_uuidPrefix = "00000000-0000-0000-0000-";
         Peripheral GetPeripheral(BluetoothDevice device)
         {
-            var uuid = new Guid(s_uuidPrefix + device.Address.Replace(":", ""));
+            var uuid = new Uuid(0, Convert.ToUInt64(device.Address.Replace(":", ""), 16));
 
             if (_peripherals.TryGetValue(uuid, out var peripheral))
             {
@@ -165,9 +164,9 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
         public IObservable<IAdvertisement> Scan() => ScanImpl(null);
         
-        public IObservable<IAdvertisement> Scan(params Guid[] services) => ScanImpl(new HashSet<Guid>(services));
+        public IObservable<IAdvertisement> Scan(params ServiceUuid[] services) => ScanImpl(new HashSet<ServiceUuid>(services));
         
-        private IObservable<IAdvertisement> ScanImpl(HashSet<Guid> services) => Observable.Create<IAdvertisement>(sub =>
+        private IObservable<IAdvertisement> ScanImpl(HashSet<ServiceUuid> services) => Observable.Create<IAdvertisement>(sub =>
         {
             _scanObservers = _scanObservers.Append(new ScanObserver { Observer = sub, Services = services });
             Reschedule();

@@ -25,5 +25,6 @@ jobs:
         with:
           name: packages
           path: src/triaxis.Xamarin.BluetoothLE/bin/Release/*nupkg
+      - run: dotnet test
       - run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
         working-directory: src/triaxis.Xamarin.BluetoothLE/bin/Release
