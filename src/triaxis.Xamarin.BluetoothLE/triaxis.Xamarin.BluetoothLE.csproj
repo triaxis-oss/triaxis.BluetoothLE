@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>MonoAndroid10.0;netstandard2.1;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
-    <Version>1.0.0-beta2</Version>
+    <Version>1.0.0-beta3</Version>
     <Authors>ssimek</Authors>
     <Company>triaxis s.r.o.</Company>
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>

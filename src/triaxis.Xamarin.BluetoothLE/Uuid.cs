@@ -77,6 +77,15 @@ namespace triaxis.Xamarin.BluetoothLE
         }
 
         /// <summary>
+        /// Gets the left 64-bits of the <see cref="Uuid" />
+        /// </summary>
+        public ulong LeftHalf => a;
+        /// <summary>
+        /// Gets the right 64-bits of the <see cref="Uuid" />
+        /// </summary>
+        public ulong RightHalf => b;
+
+        /// <summary>
         /// Creates a <see cref="Uuid"/> from a little-endian sequence of bytes
         /// </summary>
         /// <returns></returns>
