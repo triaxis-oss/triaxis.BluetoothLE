@@ -1,4 +1,4 @@
-name: publish nuget
+name: Build, Test, Publish
 on:
   - push
 
@@ -46,12 +46,14 @@ jobs:
   publish-nuget:
     name: Publish NuGet
     runs-on: macos-latest
+    env:
+      DOTNET_NOLOGO: true
     needs: build
-    if: github.ref == 'ref/head/master'
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/download-artifact@v2
         with:
           name: packages
+          path: src
       - run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
-        working-directory: src/triaxis.Xamarin.BluetoothLE/bin/Release
         
