@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using Android.App;
@@ -22,6 +23,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             for (int i = 0; i < res.Length; i++)
                 res[i] = conversion(list[i]);
             return res;
+        }
+
+        public static Uuid ToUuid(this Java.Util.UUID uuid)
+        {
+            return new Uuid((ulong)uuid.MostSignificantBits, (ulong)uuid.LeastSignificantBits);
         }
     }
 }

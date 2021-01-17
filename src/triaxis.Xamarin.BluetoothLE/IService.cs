@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +13,7 @@ namespace triaxis.Xamarin.BluetoothLE
         /// <summary>
         /// UUID of the service
         /// </summary>
-        Guid Uuid { get; }
+        ref readonly ServiceUuid Uuid { get; }
 
         /// <summary>
         /// Retrieves all characteristics defined by the service

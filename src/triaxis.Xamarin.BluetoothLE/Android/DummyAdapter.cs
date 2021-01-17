@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,7 +26,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             throw new NotSupportedException();
         }
 
-        public IObservable<IAdvertisement> Scan(params Guid[] services)
+        public IObservable<IAdvertisement> Scan(params ServiceUuid[] services)
         {
             throw new NotSupportedException();
         }

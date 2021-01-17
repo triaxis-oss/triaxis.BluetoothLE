@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,13 +15,13 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         private struct ScannerObserver
         {
             public IObserver<IAdvertisement> Observer { get; set; }
-            public HashSet<Guid> Services { get; set; }
+            public HashSet<ServiceUuid> Services { get; set; }
         }
 
         Platform _owner;
         CBCentralManager _central;
         List<ScannerObserver> _scanners = new List<ScannerObserver>();
-        Dictionary<Guid, Peripheral> _devices = new Dictionary<Guid, Peripheral>();
+        Dictionary<Uuid, Peripheral> _devices = new Dictionary<Uuid, Peripheral>();
 
         public Adapter(Platform owner)
         {
@@ -49,9 +49,9 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public IObservable<IAdvertisement> Scan() => ScanImpl(null);
         
-        public IObservable<IAdvertisement> Scan(params Guid[] services) => ScanImpl(new HashSet<Guid>(services));
+        public IObservable<IAdvertisement> Scan(params ServiceUuid[] services) => ScanImpl(new HashSet<ServiceUuid>(services));
         
-        private IObservable<IAdvertisement> ScanImpl(HashSet<Guid> services) => Observable.Create<IAdvertisement>(sub =>
+        private IObservable<IAdvertisement> ScanImpl(HashSet<ServiceUuid> services) => Observable.Create<IAdvertisement>(sub =>
         {
             _scanners.Add(new ScannerObserver { Observer = sub, Services = services });
 
@@ -73,19 +73,19 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
             }
             else
             {
-                HashSet<Guid> services = null;
+                HashSet<ServiceUuid> services = null;
 
                 if (!_scanners.Any(scn => scn.Services == null))
                 {
                     // all scanners want only specific services, create a union over all
-                    services = new HashSet<Guid>();
+                    services = new HashSet<ServiceUuid>();
                     foreach (var scn in _scanners)
                     {
                         services.UnionWith(scn.Services);
                     }
                 }
 
-                _central.ScanForPeripherals(services?.Select(guid => CBUUID.FromBytes(guid.ToBytesBE())).ToArray(), new PeripheralScanningOptions
+                _central.ScanForPeripherals(services?.Select(uuid => CBUUID.FromBytes(uuid.Uuid.ToByteArrayBE())).ToArray(), new PeripheralScanningOptions
                 {
                     AllowDuplicatesKey = true,
                 });
@@ -94,7 +94,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         Peripheral GetPeripheral(CBPeripheral peripheral)
         {
-            var uuid = new Guid(peripheral.Identifier.GetBytes());
+            var uuid = peripheral.Identifier.ToUuid();
 
             if (_devices.TryGetValue(uuid, out var bleDevice))
             {

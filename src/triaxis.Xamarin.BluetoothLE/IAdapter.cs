@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -41,6 +41,6 @@ namespace triaxis.Xamarin.BluetoothLE
         /// <summary>
         /// Gets an observable for scanning for peripherals in range, advertising the specified services
         /// </summary>
-        IObservable<IAdvertisement> Scan(params Guid[] services);
+        IObservable<IAdvertisement> Scan(params ServiceUuid[] services);
     }
 }

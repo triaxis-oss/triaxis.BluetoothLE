@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -14,7 +14,7 @@ namespace triaxis.Xamarin.BluetoothLE
         /// <summary>
         /// UUID of the device
         /// </summary>
-        Guid Uuid { get; }
+        ref readonly Uuid Uuid { get; }
 
         /// <summary>
         /// Invalidates the services cached by the system

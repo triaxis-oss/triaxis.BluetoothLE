@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,11 +12,11 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
     class Peripheral : IPeripheral
     {
         readonly Adapter _adapter;
-        readonly Guid _uuid;
+        readonly Uuid _uuid;
         CBPeripheral _peripheral;
         List<PeripheralConnection> _connections = new List<PeripheralConnection>();
 
-        public Peripheral(Adapter adapter, Guid uuid, CBPeripheral peripheral)
+        public Peripheral(Adapter adapter, Uuid uuid, CBPeripheral peripheral)
         {
             _adapter = adapter;
             _uuid = uuid;
@@ -29,7 +29,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         }
 
         public Adapter Adapter => _adapter;
-        public Guid Uuid => _uuid;
+        public ref readonly Uuid Uuid => ref _uuid;
         public CBPeripheral CBPeripheral => _peripheral;
 
         public void InvalidateServiceCache() { }    // not available on iOS
