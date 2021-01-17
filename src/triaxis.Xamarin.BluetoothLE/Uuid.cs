@@ -84,6 +84,11 @@ namespace triaxis.Xamarin.BluetoothLE
         /// Gets the right 64-bits of the <see cref="Uuid" />
         /// </summary>
         public ulong RightHalf => b;
+        
+        /// <summary>
+        /// Checks if the <see cref="Uuid" /> is a Bluetooth LE UUID
+        /// </summary>
+        public bool IsBluetoothLE => b == _uuidBleBase2 && (uint)a == 0x1000;
 
         /// <summary>
         /// Creates a <see cref="Uuid"/> from a little-endian sequence of bytes
@@ -223,7 +228,7 @@ namespace triaxis.Xamarin.BluetoothLE
         /// Gets the string representation of the <see cref="ServiceUuid"/>
         /// </summary>
         public override string ToString()
-            => $"{a >> 32:X8}-{(a >> 16) & 0xFFFF:X4}-{a & 0xFFFF:X4}-{b >> 48:X4}-{b << 16 >> 16:X12}";
+            => IsBluetoothLE ? $"BLE:{a >> 32:X}" : $"{a >> 32:X8}-{(a >> 16) & 0xFFFF:X4}-{a & 0xFFFF:X4}-{b >> 48:X4}-{b << 16 >> 16:X12}";
 
         /// <summary>
         /// Reverses the byte order of a 64-bit integer

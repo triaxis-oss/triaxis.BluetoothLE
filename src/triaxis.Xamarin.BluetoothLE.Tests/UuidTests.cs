@@ -119,5 +119,12 @@ namespace triaxis.Xamarin.BluetoothLE.Tests
             Assert.AreEqual("01234567-89AB-CDEF-FEDC-BA9876543210",
                 new Uuid(0x0123456789ABCDEF, 0xFEDCBA9876543210).ToString());
         }
+
+        [Test]
+        public void ConversionToString_BluetoothLE()
+        {
+            Assert.AreEqual("BLE:2A01",
+                new Uuid(0x2A01).ToString());
+        }
     }
 }
