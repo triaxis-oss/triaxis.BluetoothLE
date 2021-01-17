@@ -36,12 +36,12 @@ namespace triaxis.Xamarin.BluetoothLE
             /// The System Id characteristic
             /// </summary>
             public static readonly ServiceCharacteristicUuid SystemId =
-                ServiceUuid.GenericAccess + new CharacteristicUuid(0x2A23);
+                ServiceUuid.DeviceInformation + new CharacteristicUuid(0x2A23);
             /// <summary>
             /// The Manufacturer Name characteristic
             /// </summary>
             public static readonly ServiceCharacteristicUuid ManufacturerName =
-                ServiceUuid.GenericAccess + new CharacteristicUuid(0x2A29);
+                ServiceUuid.DeviceInformation + new CharacteristicUuid(0x2A29);
         }
 
         /// <summary>
