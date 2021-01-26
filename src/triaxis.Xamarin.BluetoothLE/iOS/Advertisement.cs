@@ -13,6 +13,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         readonly Peripheral _peripheral;
         readonly int _rssi;
         readonly int _txPower;
+        readonly DateTime _timestamp;
         readonly byte[] _localName;
         readonly byte[] _manufacturerData;
         readonly ServiceUuid[] _services;
@@ -29,6 +30,10 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
                 _txPower = number.Int32Value;
             if (advertisementData[CBAdvertisement.DataServiceUUIDsKey] is NSArray services)
                 _services = ExtractServiceUuids(services);
+            if (advertisementData["kCBAdvDataTimestamp"] is NSNumber stamp)
+                _timestamp = new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(stamp.DoubleValue);
+            else
+                _timestamp = DateTime.UtcNow;
         }
 
         private ServiceUuid[] ExtractServiceUuids(NSArray array)
@@ -61,6 +66,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public int Rssi => _rssi;
         public int TxPower => _txPower;
+        public DateTime Timestamp => _timestamp;
         public ServiceUuid[] Services => _services;
     }
 }

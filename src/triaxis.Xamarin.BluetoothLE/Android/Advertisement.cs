@@ -18,16 +18,16 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         int _rssi;
         int _txPower;
         byte[] _data;
-        int _time;
+        DateTime _time;
         ServiceUuid[] _services;
 
-        public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data)
+        public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data, long timestampNanos)
         {
             _peripheral = peripheral;
             _rssi = rssi;
             _txPower = txPower;
             _data = data;
-            _time = System.Environment.TickCount;
+            _time = new DateTime(timestampNanos / 100, DateTimeKind.Utc);
         }
 
         public byte[] this[AdvertisementRecord record]
@@ -55,7 +55,8 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public IPeripheral Peripheral => _peripheral;
         public int Rssi => _rssi;
         public int TxPower => _txPower;
-        public int Time => _time;
+        public DateTime Timestamp => _time;
+        public int Time => System.Environment.TickCount - (int)(DateTime.UtcNow - _time).TotalMilliseconds;
         public ServiceUuid[] Services => _services ??= ExtractServices();
 
         private ServiceUuid[] ExtractServices()

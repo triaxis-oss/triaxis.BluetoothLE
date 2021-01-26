@@ -119,7 +119,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
             public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
             {
-                var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes());
+                ProcessResult(result);
+            }
+
+            private void ProcessResult(ScanResult result)
+            {
+                var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes(), result.TimestampNanos);
                 Array.ForEach(_adapter._scanObservers, obs => 
                 {
                     if (obs.Services == null || (adv.Services != null && obs.Services.Overlaps(adv.Services)))
