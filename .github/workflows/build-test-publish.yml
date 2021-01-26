@@ -101,7 +101,6 @@ jobs:
     env:
       DOTNET_NOLOGO: true
     needs: build
-    if: needs.build.outputs.is-release == 'true'
     steps:
       - name: Fetch Package Artifacts
         uses: actions/download-artifact@v2
@@ -110,4 +109,9 @@ jobs:
           path: src
 
       - name: Publish NuGet Packages
+        if: needs.build.outputs.is-release == 'true'
         run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+
+      - name: Publish GitHub Packages
+        if: needs.build.outputs.is-release != 'true'
+        run: dotnet nuget push *.nupkg -s https://${{github.actor}}@nuget.pkg.github.com/${{github.repository_owner}} -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
