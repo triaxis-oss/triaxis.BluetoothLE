@@ -61,7 +61,8 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             // initialize scanner
             var sb = new ScanSettings.Builder()
                 .SetCallbackType(ScanCallbackType.AllMatches)
-                .SetScanMode(ScanMode.LowLatency);
+                .SetScanMode(ScanMode.LowLatency)
+                .SetReportDelay(10);
 
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
@@ -122,10 +123,18 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 ProcessResult(result);
             }
 
+            public override void OnBatchScanResults(IList<ScanResult> results)
+            {
+                foreach (var res in results)
+                {
+                    ProcessResult(res);
+                }
+            }
+
             private void ProcessResult(ScanResult result)
             {
                 var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes(), result.TimestampNanos);
-                Array.ForEach(_adapter._scanObservers, obs => 
+                Array.ForEach(_adapter._scanObservers, obs =>
                 {
                     if (obs.Services == null || (adv.Services != null && obs.Services.Overlaps(adv.Services)))
                     {
