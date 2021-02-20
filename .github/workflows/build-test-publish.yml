@@ -32,7 +32,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: msbuild /t:build /p:Configuration=Release
+        run: msbuild /t:build /p:Configuration=Release /m
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v2
