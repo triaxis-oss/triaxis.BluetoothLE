@@ -23,39 +23,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set version
-        uses: actions/github-script@v3.1.0
+        uses: triaxis-oss/dotnet-set-version@v1
         id: get-version
         with:
-          script: |
-            const fs = require('fs');
-
-            const projFile = 'src/triaxis.Xamarin.BluetoothLE/triaxis.Xamarin.BluetoothLE.csproj';
-            let projLines = fs.readFileSync(projFile, 'utf8').split('\n');
-            let verLine = 0;
-            let ver = '';
-
-            for (let i = 0; i < projLines.length; i++) {
-              const trimmed = projLines[i].trim();
-              if (trimmed.startsWith("<Version>") && trimmed.endsWith("</Version>")) {
-                verLine = i;
-                ver = trimmed.slice(9, -10)
-                console.log(`Found project version ${ver} at line ${verLine}`)
-                break;
-              }
-            }
-
-            const versionTag = context.ref.startsWith('refs/tags/v')
-            if (versionTag) {
-              ver = context.ref.split('/')[2].substring(1)
-            } else {
-              ver += `-g${context.sha.substring(0, 8)}`
-            }
-            console.log(`Setting version: ${ver}`)
-            projLines[verLine] = `<Version>${ver}</Version>`
-            fs.writeFileSync(projFile, projLines.join('\n'))
-
-            core.setOutput('is-release', context.payload.base_ref == 'refs/heads/master')
-            core.setOutput('version', ver)
+          project: src/triaxis.Xamarin.BluetoothLE/triaxis.Xamarin.BluetoothLE.csproj
 
       - name: Restore NuGet Packages
         run: dotnet restore
