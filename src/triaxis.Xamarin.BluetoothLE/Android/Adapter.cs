@@ -62,7 +62,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             var sb = new ScanSettings.Builder()
                 .SetCallbackType(ScanCallbackType.AllMatches)
                 .SetScanMode(ScanMode.LowLatency)
-                .SetReportDelay(10);
+                .SetReportDelay(100);
 
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
