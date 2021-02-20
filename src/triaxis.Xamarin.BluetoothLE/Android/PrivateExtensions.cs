@@ -29,5 +29,15 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         {
             return new Uuid((ulong)uuid.MostSignificantBits, (ulong)uuid.LeastSignificantBits);
         }
+
+        public static Java.Util.UUID ToJavaUuid(this in Uuid uuid)
+        {
+            return new Java.Util.UUID((long)uuid.LeftHalf, (long)uuid.RightHalf);
+        }
+
+        public static ParcelUuid ToParcelUuid(this in Uuid uuid)
+        {
+            return new ParcelUuid(uuid.ToJavaUuid());
+        }
     }
 }

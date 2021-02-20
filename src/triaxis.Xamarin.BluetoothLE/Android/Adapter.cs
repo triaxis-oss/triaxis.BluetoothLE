@@ -35,8 +35,9 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
         bool _scanning;
         BluetoothLeScanner _scanner;
-        ScanSettings _scanSettings;
-        ScanCallbackImpl _scanCallback;
+        ScanSettings _scanSettings, _scanSettingsBatch;
+        ScanCallback _scanCallback, _scanCallbackBatch;
+        ScanFilter[] _scanFilters;
         ScanObserver[] _scanObservers;
         List<PeripheralConnection.ConnectOperation> _connectOps;
 
@@ -61,8 +62,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             // initialize scanner
             var sb = new ScanSettings.Builder()
                 .SetCallbackType(ScanCallbackType.AllMatches)
-                .SetScanMode(ScanMode.LowLatency)
-                .SetReportDelay(100);
+                .SetScanMode(ScanMode.LowLatency);
 
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
@@ -70,8 +70,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
 
             _scanSettings = sb.Build();
+            sb.SetReportDelay(1000);
+            _scanSettingsBatch = sb.Build();
+
             _scanner = _adapter.BluetoothLeScanner;
             _scanCallback = new ScanCallbackImpl(this);
+            _scanCallbackBatch = new BatchScanCallbackImpl();
         }
 
         public AdapterState State
@@ -120,20 +124,13 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
             public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
             {
+                _adapter._advSeen = true;
                 ProcessResult(result);
-            }
-
-            public override void OnBatchScanResults(IList<ScanResult> results)
-            {
-                foreach (var res in results)
-                {
-                    ProcessResult(res);
-                }
             }
 
             private void ProcessResult(ScanResult result)
             {
-                var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes(), result.TimestampNanos);
+                var adv = new Advertisement(_adapter.GetPeripheral(result.Device), result.Rssi, -127, result.ScanRecord.GetBytes(), DateTime.UtcNow);
                 Array.ForEach(_adapter._scanObservers, obs =>
                 {
                     if (obs.Services == null || (adv.Services != null && obs.Services.Overlaps(adv.Services)))
@@ -150,12 +147,28 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
         }
 
+        class BatchScanCallbackImpl : ScanCallback
+        {
+            public BatchScanCallbackImpl()
+            {
+            }
+
+            public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
+            {
+            }
+
+            public override void OnScanFailed(ScanFailure errorCode)
+            {
+            }
+        }
+
         void StartScan()
         {
             _scanning = true;
             try
             {
-                _scanner.StartScan(null, _scanSettings, _scanCallback);
+                _scanner.StartScan(_scanFilters, _scanSettings, _scanCallback);
+                _scanner.StartScan(_scanFilters, _scanSettingsBatch, _scanCallbackBatch);
             }
             catch (Exception err)
             {
@@ -169,6 +182,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             try
             {
                 _scanner.StopScan(_scanCallback);
+                _scanner.StopScan(_scanCallbackBatch);
             }
             catch (Exception err)
             {
@@ -183,17 +197,40 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         private IObservable<IAdvertisement> ScanImpl(HashSet<ServiceUuid> services) => Observable.Create<IAdvertisement>(sub =>
         {
             _scanObservers = _scanObservers.Append(new ScanObserver { Observer = sub, Services = services });
-            Reschedule();
+            UpdateScanFilters();
 
             return () =>
             {
                 _scanObservers = _scanObservers.Remove(x => x.Observer == sub);
-                Reschedule();
+                UpdateScanFilters();
             };
         });
 
+        void UpdateScanFilters()
+        {
+            if (_scanObservers.Any(obs => obs.Services == null))
+            {
+                _scanFilters = null;
+            }
+            else
+            {
+                var builder = new ScanFilter.Builder();
+                _scanFilters = _scanObservers
+                    .Aggregate(new HashSet<ServiceUuid>(), (acc, elem) => { acc.UnionWith(elem.Services); return acc; })
+                    .Select(svc =>
+                    {
+                        builder.SetServiceUuid(svc.Uuid.ToParcelUuid());
+                        return builder.Build();
+                    })
+                    .ToArray();
+            }
+            
+            Reschedule();
+        }
+
         #region Scan/collection scheduler
         TaskCompletionSource<bool> _tcsSchedule = new TaskCompletionSource<bool>();
+        bool _advSeen;
 
         internal void Reschedule()
         {
@@ -360,9 +397,17 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 {
                     Log("Starting scanner");
                     StartScan();
-                    if (await Delay(ScanContinuousTime))
+                    for (; ; )
                     {
-                        return true;
+                        _advSeen = false;
+                        if (await Delay(ScanContinuousTime))
+                        {
+                            return true;
+                        }
+                        if (!_advSeen)
+                        {
+                            break;
+                        }
                     }
                     Log("No event, interrupting scan for a while");
                     StopScan();

@@ -21,13 +21,13 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         DateTime _time;
         ServiceUuid[] _services;
 
-        public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data, long timestampNanos)
+        public Advertisement(Peripheral peripheral, int rssi, int txPower, byte[] data, DateTime timestamp)
         {
             _peripheral = peripheral;
             _rssi = rssi;
             _txPower = txPower;
             _data = data;
-            _time = new DateTime(timestampNanos / 100, DateTimeKind.Utc);
+            _time = timestamp;
         }
 
         public byte[] this[AdvertisementRecord record]
