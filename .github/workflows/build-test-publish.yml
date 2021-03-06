@@ -31,8 +31,13 @@ jobs:
       - name: Restore NuGet Packages
         run: dotnet restore
 
-      - name: Build
-        run: msbuild /t:build /p:Configuration=Release /m
+      - name: Build Release
+        if: steps.get-version.outputs.is-release == 'true'
+        run: msbuild /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true" /m
+
+      - name: Build Development
+        if: steps.get-version.outputs.is-release != 'true'
+        run: msbuild /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;DebugType=embedded" /m
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v2
