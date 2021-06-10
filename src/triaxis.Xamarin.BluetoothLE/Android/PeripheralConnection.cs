@@ -308,7 +308,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             protected override bool Execute()
                 => _gatt.ReadCharacteristic(_ch);
 
-            protected override string BaseErrorMessage => $"Failed to read characteristic {_ch}";
+            protected override string BaseErrorMessage => $"Failed to read characteristic {_ch.Uuid.ToUuid()}";
         }
 
         class WriteCharacteristicOperation : CharacteristicOperation<byte[]>
@@ -323,7 +323,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 return _gatt.WriteCharacteristic(_ch);
             }
 
-            protected override string BaseErrorMessage => $"Failed to write characteristic {_ch}";
+            protected override string BaseErrorMessage => $"Failed to write characteristic {_ch.Uuid.ToUuid()}";
         }
 
         abstract class NotifyOperation : CharacteristicOperation<bool>
@@ -342,7 +342,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
                 if (_desc == null)
                 {
-                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch);
+                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch.Uuid.ToUuid());
                     return SetResult(true);
                 }
 
@@ -350,7 +350,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 return _gatt.WriteDescriptor(_desc);
             }
 
-            protected override string BaseErrorMessage => $"Failed to enable notifications on {_ch}";
+            protected override string BaseErrorMessage => $"Failed to enable notifications on {_ch.Uuid.ToUuid()}";
             public override void DescriptorWritten() => SetResult(true);
         }
 
@@ -360,7 +360,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 if (_desc == null)
                 {
-                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch);
+                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch.Uuid.ToUuid());
                     bool res = _gatt.SetCharacteristicNotification(_ch, false);
                     SetResult(false);
                     return res;
@@ -370,7 +370,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 return _gatt.WriteDescriptor(_desc);
             }
 
-            protected override string BaseErrorMessage => $"Failed to disable notifications on {_ch}";
+            protected override string BaseErrorMessage => $"Failed to disable notifications on {_ch.Uuid.ToUuid()}";
 
             public override void DescriptorWritten()
             {
