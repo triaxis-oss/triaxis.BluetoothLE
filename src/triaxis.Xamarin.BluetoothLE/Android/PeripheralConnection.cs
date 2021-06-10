@@ -11,19 +11,23 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
-
+using Microsoft.Extensions.Logging;
 using Debug = System.Diagnostics.Debug;
 
 namespace triaxis.Xamarin.BluetoothLE.Android
 {
     class PeripheralConnection : BluetoothGattCallback, IPeripheralConnection
     {
-        Peripheral _device;
-        BluetoothGatt _gatt;
-        Task _tDisconnect;
-        Task<IList<IService>> _tServics;
-        OperationQueue _q = new OperationQueue();
-        SynchronizationContext _context;
+        private readonly Peripheral _device;
+        private readonly OperationQueue _q;
+        private readonly SynchronizationContext _context;
+        private readonly string _loggerId;
+        internal readonly ILogger _logger;
+
+        private BluetoothGatt _gatt;
+
+        private Task _tDisconnect;
+        private Task<IList<IService>> _tServics;
 
         public event Action<BluetoothGattCharacteristic, byte[]> CharacteristicChanged;
         public event EventHandler<Exception> Closed;
@@ -31,10 +35,13 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         static readonly byte[] s_enableNotification = BluetoothGattDescriptor.EnableNotificationValue.ToArray();
         static readonly byte[] s_disableNotification = BluetoothGattDescriptor.DisableNotificationValue.ToArray();
 
-        public PeripheralConnection(Peripheral device)
+        public PeripheralConnection(Peripheral device, int num)
         {
             _device = device;
             _context = SynchronizationContext.Current;
+            _loggerId = $"BLEConnection:{device.Uuid}:{num}";
+            _logger = device.Adapter._loggerFactory.CreateLogger(_loggerId);
+            _q = new OperationQueue(_logger);
         }
 
         public Task<IPeripheralConnection> ConnectAsync(Advertisement reference, int period, int before, int after, int attempts)
@@ -113,8 +120,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
         internal abstract class Operation<T> : BluetoothLE.Operation<T>
         {
+            static int s_num;
             public PeripheralConnection _owner;
             protected BluetoothGatt _gatt => _owner._gatt;
+            private ILogger __logger;
+            protected ILogger _logger => __logger ??= _owner._device.Adapter._loggerFactory.CreateLogger($"{_owner._loggerId}:{this}");
 
             public bool CheckStatus(GattStatus status)
             {
@@ -183,14 +193,14 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
                 int align = (after - _reference) % _period;
                 int res = after + (align == 0 ? 0 : _period - align);
-                Debug.WriteLine($"{this} GetNextAttempt({after}) ref={_reference} per={_period} align={align} res={res}");
+                _logger.LogTrace("GetNextAttempt({After}) ref={Reference} per={Period} align={Align} res={Res}", after, _reference, _period, align, res);
                 return res;
             }
 
             internal int StartAttempt()
             {
                 _owner._gatt = _owner._device.Device.ConnectGatt(Application.Context, false, _owner, BluetoothTransports.Le);
-                Debug.WriteLine($"{this} _gatt = {_gatt}");
+                _logger.LogTrace("_gatt = {Gatt}", _gatt);
                 if (_gatt == null)
                 {
                     SetException(BaseErrorMessage);
@@ -199,16 +209,16 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
                 if (_owner._device.CacheInvalidationRequested())
                 {
-                    Debug.WriteLine($"{this} refreshing service cache");
+                    _logger.LogDebug("refreshing service cache");
                     var mth = _gatt.Class.GetMethod("refresh");
                     if (mth == null)
                     {
-                        Debug.WriteLine($"{this} _gatt.refresh() method not found");
+                        _logger.LogWarning("_gatt.refresh() method not found");
                     }
                     else
                     {
                         var res = mth.Invoke(_gatt);
-                        Debug.WriteLine($"{this} _gatt.refresh() == {res}");
+                        _logger.LogDebug("_gatt.refresh() == {res}", res);
                     }
                 }
 
@@ -219,13 +229,13 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 if (_gatt != null)
                 {
-                    Debug.WriteLine($"{this} connection timeout, disconnecting");
+                    _logger.LogWarning("connection timeout, disconnecting");
                     _gatt.Disconnect();
                     await System.Threading.Tasks.Task.Delay(200);
                 }
                 if (_gatt != null)
                 {
-                    Debug.WriteLine($"{this} closing connection");
+                    _logger.LogInformation("aborting connection");
                     _gatt.Close();
                     await System.Threading.Tasks.Task.Delay(200);
                 }
@@ -233,13 +243,13 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 if (--_attempts == 0)
                 {
                     // done
-                    Debug.WriteLine($"{this} final attempt failed");
+                    _logger.LogWarning("final attempt failed");
                     SetResult(null);
                     Dequeue();
                 }
                 else
                 {
-                    Debug.WriteLine($"{this} {_attempts} attempts remaining");
+                    _logger.LogInformation("{AttemptCount} attempts remaining", _attempts);
                 }
             }
 
@@ -258,7 +268,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                 {
                     _owner._gatt.Disconnect();
                     _owner._gatt = null;
-                    Debug.WriteLine($"{this} _gatt = null (disconnect)");
+                    _logger.LogDebug("_gatt = null (disconnect)");
                 }
                 else
                 {
@@ -332,7 +342,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
                 if (_desc == null)
                 {
-                    Debug.WriteLine($"{_ch} does not have a client config descriptor");
+                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch);
                     return SetResult(true);
                 }
 
@@ -350,7 +360,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 if (_desc == null)
                 {
-                    Debug.WriteLine($"{_ch} does not have a client config descriptor");
+                    _logger.LogWarning("{Characteristic} does not have a client config descriptor", _ch);
                     bool res = _gatt.SetCharacteristicNotification(_ch, false);
                     SetResult(false);
                     return res;
@@ -377,7 +387,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
         public override void OnConnectionStateChange(BluetoothGatt gatt, GattStatus status, ProfileState newState)
         {
-            Debug.WriteLine($"{gatt} state changed to {newState}, status {status}");
+            _logger.LogDebug("{Gatt} state changed to {NewState}, status {Status}", gatt, newState, status);
 
             switch (newState)
             {
@@ -395,7 +405,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
                     if (System.Threading.Interlocked.CompareExchange(ref _gatt, null, gatt) != null)
                     {
-                        Debug.WriteLine($"{this} _gatt = null (lost)");
+                        _logger.LogDebug("_gatt = null (lost)");
                     }
                     gatt.Close();
 
@@ -444,7 +454,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                Debug.WriteLine($"OnServicesDiscovered({status}) called without a pending GetServices operation");
+                _logger.LogWarning("OnServicesDiscovered({Status}) called without a pending GetServices operation", status);
             }
         }
 
@@ -457,7 +467,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                Debug.WriteLine($"OnCharacteristicRead({status}) called without request");
+                _logger.LogWarning("OnCharacteristicRead({Status}) called without request", status);
             }
         }
 
@@ -470,7 +480,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                Debug.WriteLine($"OnCharacteristicWrite({status}) called without request");
+                _logger.LogWarning("OnCharacteristicWrite({Status}) called without request", status);
             }
         }
 
@@ -483,7 +493,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                Debug.WriteLine($"OnDescriptorWrite({status}) called without request");
+                _logger.LogWarning("OnDescriptorWrite({Status}) called without request");
             }
         }
 
@@ -496,7 +506,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                Debug.WriteLine($"OnMtuChanged({mtu}, {status}) called without request");
+                _logger.LogWarning("OnMtuChanged({Mtu}, {Status}) called without request", mtu, status);
             }
         }
 

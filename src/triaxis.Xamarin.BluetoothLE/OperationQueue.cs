@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace triaxis.Xamarin.BluetoothLE
 {
@@ -11,16 +12,17 @@ namespace triaxis.Xamarin.BluetoothLE
     {
         IOperation _current;
         Task _last = Task.CompletedTask;
+        ILogger _logger;
         TaskScheduler _scheduler;
 
-        public OperationQueue(TaskScheduler scheduler = null)
+        public OperationQueue(ILogger logger, TaskScheduler scheduler = null)
         {
             _scheduler = scheduler ?? TaskScheduler.FromCurrentSynchronizationContext();
         }
 
         public Task<T> Enqueue<T>(IOperation<T> op, int timeout = Timeout.Infinite)
         {
-            DebugLog($"Enqueuing {op}");
+            _logger.LogDebug("Enqueuing {Operation}", op);
             var prev = _last;
             var t = op.Task;
             _last = t;
@@ -30,7 +32,7 @@ namespace triaxis.Xamarin.BluetoothLE
                 int delay = op.StartDelay;
                 if (delay > 0)
                 {
-                    DebugLog($"{op} pre-delay {delay} ms");
+                    _logger.LogDebug("{Operation} pre-delay {DelayMilliseconds} ms", op, delay);
                     await Task.Delay(delay);
                 }
 
@@ -38,7 +40,7 @@ namespace triaxis.Xamarin.BluetoothLE
                 {
                     if (timeout != Timeout.Infinite)
                     {
-                        DebugLog($"{op} starting with {timeout} ms timeout");
+                        _logger.LogDebug("{Operation} starting with {TimeoutMilliseconds} ms timeout", op, timeout);
                         var cts = new CancellationTokenSource(timeout);
                         op.Start(cts.Token);
                         _ = t.ContinueWith(_ =>
@@ -48,13 +50,13 @@ namespace triaxis.Xamarin.BluetoothLE
                     }
                     else
                     {
-                        DebugLog($"{op} starting without timeout");
+                        _logger.LogDebug("{Operation} starting without timeout", op);
                         op.Start(default);
                     }
                 }
                 catch (Exception e)
                 {
-                    DebugLog($"{op} crashed on start: {e}");
+                    _logger.LogError(e, "{Operation} crashed on start", op);
                     op.Abort(e);
                 }
             }, _scheduler);
@@ -88,20 +90,5 @@ namespace triaxis.Xamarin.BluetoothLE
         }
 
         public bool IsIdle => _last.IsCompleted;
-
-        partial void DebugLog(string message);
     }
-
-#if DEBUG
-    partial class OperationQueue
-    {
-        static int s_num;
-        int _num = ++s_num;
-
-        partial void DebugLog(string message)
-        {
-            Debug.WriteLine(message, $"BLEOperationQueue[{_num}]");
-        }
-    }
-#endif
 }

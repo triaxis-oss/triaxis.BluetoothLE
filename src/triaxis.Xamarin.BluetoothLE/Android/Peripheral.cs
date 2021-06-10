@@ -22,6 +22,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         BluetoothDevice _device;
         HashSet<PeripheralConnection> _connections = new HashSet<PeripheralConnection>();
         int _invalidateCache;
+        int _connCount;
 
         public Peripheral(Adapter adapter, Uuid uuid, BluetoothDevice device)
         {
@@ -75,7 +76,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         public Task<IPeripheralConnection> ConnectAsync(int timeout)
             => ConnectPatternAsync(null, 0, timeout == Timeout.Infinite ? 60000 : timeout, 0, 1);
         public Task<IPeripheralConnection> ConnectPatternAsync(IAdvertisement reference, int period, int before, int after, int attempts)
-            => new PeripheralConnection(this).ConnectAsync((Advertisement)reference, period, before, after, attempts);
+            => new PeripheralConnection(this, ++_connCount).ConnectAsync((Advertisement)reference, period, before, after, attempts);
 
         public override string ToString()
             => $"{_device.Name ?? "Device"} ({_device.Address})";

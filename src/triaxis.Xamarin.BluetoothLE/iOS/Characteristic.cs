@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CoreBluetooth;
 using Foundation;
+using Microsoft.Extensions.Logging;
 using UIKit;
 
 namespace triaxis.Xamarin.BluetoothLE.iOS
@@ -66,7 +67,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"Failed to disable characteristic notifications: {e}");
+                    _service.Connection._logger.LogError(e, "Failed to disable notifications for {Characteristic}", _uuid);
                 }
                 finally
                 {

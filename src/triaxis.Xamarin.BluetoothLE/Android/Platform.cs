@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
@@ -11,7 +11,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
-
+using Microsoft.Extensions.Logging;
 using Application = Android.App.Application;
 
 [assembly: UsesPermission("android.permission.BLUETOOTH")]
@@ -26,8 +26,18 @@ namespace triaxis.Xamarin.BluetoothLE.Android
     /// </summary>
     public class Platform : IBluetoothLE
     {
+        private readonly ILoggerFactory _loggerFactory;
+
         ReplaySubject<IAdapter> _adapterSubject;
         IAdapter _adapter;
+
+        /// <summary>
+        /// Creates an instance of the platform-specific <see cref="IBluetoothLE"/> implementation
+        /// </summary>
+        public Platform(ILoggerFactory loggerFactory)
+        {
+            _loggerFactory = loggerFactory;
+        }
 
         /// <summary>
         /// Gets an observable returning values when Bluetooth LE adapter availability changes
@@ -45,7 +55,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
             var manager = (BluetoothManager)Application.Context.GetSystemService(Context.BluetoothService);
             var adapter = manager.Adapter;
-            subj.OnNext(_adapter = new Adapter(adapter));
+            subj.OnNext(_adapter = new Adapter(adapter, _loggerFactory));
             return subj;
         }
 

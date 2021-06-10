@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using System.Text;
 using CoreBluetooth;
 using Foundation;
+using Microsoft.Extensions.Logging;
 using UIKit;
 
 namespace triaxis.Xamarin.BluetoothLE.iOS
@@ -22,9 +23,13 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         CBCentralManager _central;
         List<ScannerObserver> _scanners = new List<ScannerObserver>();
         Dictionary<Uuid, Peripheral> _devices = new Dictionary<Uuid, Peripheral>();
+        internal readonly ILoggerFactory _loggerFactory;
+        ILogger _logger;
 
-        public Adapter(Platform owner)
+        public Adapter(Platform owner, ILoggerFactory loggerFactory)
         {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger("BLEAdapter");
             _owner = owner;
             _central = new CBCentralManager(this, null);
         }
@@ -125,19 +130,19 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public override void FailedToConnectPeripheral(CBCentralManager central, CBPeripheral peripheral, NSError error)
         {
-            Debug.WriteLine($"FailedToConnectPeripheral: {peripheral}, {error}");
+            _logger.LogDebug("FailedToConnectPeripheral: {Peripheral}, {Error}", peripheral, error);
             GetPeripheral(peripheral).ConnectionFailed(peripheral, error);
         }
 
         public override void ConnectedPeripheral(CBCentralManager central, CBPeripheral peripheral)
         {
-            Debug.WriteLine($"ConnectedPeripheral: {peripheral}");
+            _logger.LogDebug("ConnectedPeripheral: {Peripheral}", peripheral);
             GetPeripheral(peripheral).Connected(peripheral);
         }
 
         public override void DisconnectedPeripheral(CBCentralManager central, CBPeripheral peripheral, NSError error)
         {
-            Debug.WriteLine($"DisconnectedPeripheral: {peripheral}, {error}");
+            _logger.LogDebug("DisconnectedPeripheral: {Peripheral}, {Error}", peripheral, error);
             GetPeripheral(peripheral).Disconnected(peripheral, error);
         }
     }

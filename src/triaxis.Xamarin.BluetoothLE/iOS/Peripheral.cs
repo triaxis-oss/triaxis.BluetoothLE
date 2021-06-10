@@ -5,19 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using CoreBluetooth;
 using Foundation;
+using Microsoft.Extensions.Logging;
 using UIKit;
 
 namespace triaxis.Xamarin.BluetoothLE.iOS
 {
     class Peripheral : IPeripheral
     {
-        readonly Adapter _adapter;
-        readonly Uuid _uuid;
-        CBPeripheral _peripheral;
-        List<PeripheralConnection> _connections = new List<PeripheralConnection>();
+        private readonly Adapter _adapter;
+        private readonly Uuid _uuid;
+        private readonly List<PeripheralConnection> _connections = new List<PeripheralConnection>();
+        private readonly ILogger _logger;
+        private CBPeripheral _peripheral;
+        private int _connNum;
 
         public Peripheral(Adapter adapter, Uuid uuid, CBPeripheral peripheral)
         {
+            _logger = adapter._loggerFactory.CreateLogger($"BLEPeripheral:{uuid}");
             _adapter = adapter;
             _uuid = uuid;
             _peripheral = peripheral;
@@ -36,10 +40,12 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
         public Task<IPeripheralConnection> ConnectAsync(int timeout)
         {
-            var con = new PeripheralConnection(this);
+            var con = new PeripheralConnection(this, ++_connNum);
             _connections.Add(con);
             if (_connections.Count > 1)
-                System.Diagnostics.Debug.WriteLine($"WARNING! {_connections.Count} parallel connections to the same device detected");
+            {
+                _logger.LogWarning("{ConnectionCount} parallel connections to the same device detected");
+            }
             return con.ConnectAsync(timeout);
         }
 

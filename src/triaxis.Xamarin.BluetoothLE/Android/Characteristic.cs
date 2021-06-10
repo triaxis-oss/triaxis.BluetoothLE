@@ -11,7 +11,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
-
+using Microsoft.Extensions.Logging;
 using Debug = System.Diagnostics.Debug;
 
 namespace triaxis.Xamarin.BluetoothLE.Android
@@ -78,7 +78,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                     }
                     catch (Exception e)
                     {
-                        Debug.WriteLine($"Failed to disable characteristic notifications: {e}");
+                        _service.Connection._logger.LogError(e, "Failed to disable characteristic notifications for {Characteristic}", _uuid);
                     }
                     finally
                     {

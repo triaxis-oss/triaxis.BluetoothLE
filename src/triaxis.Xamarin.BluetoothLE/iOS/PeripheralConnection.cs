@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,29 +7,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoreBluetooth;
 using Foundation;
+using Microsoft.Extensions.Logging;
 using UIKit;
 
 namespace triaxis.Xamarin.BluetoothLE.iOS
 {
     class PeripheralConnection : CBPeripheralDelegate, IPeripheralConnection
     {
-        readonly Peripheral _device;
-        readonly Adapter _adapter;
-        readonly CBPeripheral _peripheral;
-        readonly CBCentralManager _central;
+        private readonly Peripheral _device;
+        private readonly Adapter _adapter;
+        private readonly CBPeripheral _peripheral;
+        private readonly CBCentralManager _central;
+        private readonly OperationQueue _q;
+        private readonly string _loggerId;
+        internal readonly ILogger _logger;
         Task _tDisconnect;
         Task<IList<IService>> _tServices;
-        OperationQueue _q = new OperationQueue();
 
         public event Action<CBCharacteristic, byte[]> CharacteristicChanged;
         public event EventHandler<Exception> Closed;
 
-        public PeripheralConnection(Peripheral device)
+        public PeripheralConnection(Peripheral device, int num)
         {
             _device = device;
             _adapter = device.Adapter;
             _peripheral = device.CBPeripheral;
             _central = _adapter.CentralManager;
+            _loggerId = $"BLEConnection:{device.Uuid}:{num}";
+            _logger = _adapter._loggerFactory.CreateLogger(_loggerId);
+            _q = new OperationQueue(_logger);
         }
 
         public Peripheral Device => _device;
@@ -106,6 +112,8 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             public PeripheralConnection _owner;
             protected CBPeripheral _peripheral => _owner._peripheral;
+            private ILogger __logger;
+            protected ILogger _logger => __logger ??= _owner._adapter._loggerFactory.CreateLogger($"{_owner._loggerId}:{this}");
 
             public bool CheckSuccess(NSError error)
             {
@@ -160,7 +168,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
             protected override CancellationTokenRegistration SetupCancellation(CancellationToken token)
                 => token.Register(() =>
                 {
-                    Debug.WriteLine($"BLEConnection connect timeout: {_peripheral}");
+                    _logger.LogInformation("Connect timeout: {Peripheral}", _peripheral);
                     _owner._central.CancelPeripheralConnection(_peripheral);
                 }, true);
         }
@@ -237,13 +245,13 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             if (_q.TryGetCurrent<ConnectOperation>(out var op))
             {
-                Debug.WriteLine($"BLEConnection active: {peripheral}");
+                _logger.LogInformation("Connection active: {Peripheral}", peripheral);
                 _peripheral.Delegate = this;
                 return op.SetResult(this);
             }
             else
             {
-                Debug.WriteLine($"BLEConnection received unexpected Connected notification");
+                _logger.LogWarning("received unexpected Connected notification");
                 return false;
             }
         }
@@ -252,7 +260,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             if (_q.TryGetCurrent<ConnectOperation>(out var op))
             {
-                Debug.WriteLine($"BLEConnection failed: {peripheral}, {error}");
+                _logger.LogError("Connection failed: {Peripheral}, {Error}", peripheral, error);
                 if (!op.CheckSuccess(error))
                     op.SetException(new BluetoothLEException("Unknown error occured while connecting"));
 
@@ -261,7 +269,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
             }
             else
             {
-                Debug.WriteLine($"BLEConnection received unexpected ConnectionFailed notification: {peripheral}, {error}");
+                _logger.LogWarning("received unexpected ConnectionFailed notification: {Peripheral}, {Error}", peripheral, error);
                 return false;
             }
         }
@@ -270,7 +278,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             if (_peripheral == peripheral && _peripheral.Delegate == this)
             {
-                Debug.WriteLine($"BLEConnection closed: {peripheral}, {error}");
+                _logger.LogInformation("Connection closed: {Peripheral}, {Error}", peripheral, error);
                 _peripheral.Delegate = null;
 
                 if (_q.TryGetCurrent<DisconnectOperation>(out var op))
@@ -294,7 +302,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
             }
             else
             {
-                Debug.WriteLine($"BLEConnection received unexpected Disconnected notification: {peripheral}, {error}");
+                _logger.LogWarning("received unexpected Disconnected notification: {Peripheral}, {Error}", peripheral, error);
                 return false;
             }
         }

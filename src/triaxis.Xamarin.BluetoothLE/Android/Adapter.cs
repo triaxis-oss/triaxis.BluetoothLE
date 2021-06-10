@@ -15,7 +15,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
-
+using Microsoft.Extensions.Logging;
 using Environment = System.Environment;
 using NativeState = Android.Bluetooth.State;
 using ScanMode = Android.Bluetooth.LE.ScanMode;
@@ -40,13 +40,17 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         ScanFilter[] _scanFilters;
         ScanObserver[] _scanObservers;
         List<PeripheralConnection.ConnectOperation> _connectOps;
+        internal readonly ILoggerFactory _loggerFactory;
+        ILogger _logger;
 
-        public Adapter(BluetoothAdapter adapter)
+        public Adapter(BluetoothAdapter adapter, ILoggerFactory loggerFactory)
         {
             _adapter = adapter;
             _peripherals = new Dictionary<Uuid, Peripheral>();
             _scanObservers = Array.Empty<ScanObserver>();
             _connectOps = new List<PeripheralConnection.ConnectOperation>();
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory.CreateLogger("BLEAdapter");
 
             InitializeScanner();
             Scheduler();
@@ -172,7 +176,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             catch (Exception err)
             {
-                global::Android.Util.Log.Error("BLEAdapter", "StartScan Crashed: " + err);
+                _logger.LogError(err, "StartScan Crashed");
             }
         }
 
@@ -186,7 +190,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             catch (Exception err)
             {
-                global::Android.Util.Log.Error("BLEAdapter", "StopScan Crashed: " + err);
+                _logger.LogError(err, "StopScan Crashed");
             }
         }
 
@@ -302,15 +306,12 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         bool WantScan => _scanObservers.Length > 0;
         bool ActiveConnection => _peripherals.Values.Any(dev => dev.IsConnected);
 
-        private static void Log(string log)
-            => global::Android.Util.Log.Info("BLEScheduler", log);
-
         private async Task<bool> Schedule()
         {
             // reset trigger
             _tcsSchedule = new TaskCompletionSource<bool>();
 
-            Log("Scheduling...");
+            _logger.LogInformation("Scheduling...");
 
             // look for an active connection request
             PeripheralConnection.ConnectOperation conOp = null;
@@ -332,7 +333,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 if (!Scanning)
                 {
-                    Log($"Starting scanner until {conTime - ScanStopDelay} before connecting");
+                    _logger.LogDebug("Starting scanner until {Ticks} before connecting", conTime - ScanStopDelay);
                     StartScan();
                 }
                 // wait until it's time to connect
@@ -346,11 +347,11 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 if (conOp != null)
                 {
-                    Log($"Stopping scanner, {conOp}");
+                    _logger.LogInformation("Stopping scanner due to {Operation}", conOp);
                 }
                 else
                 {
-                    Log("Stopping scanner, no observers left");
+                    _logger.LogInformation("Stopping scanner, no observers left");
                 }
                 // stop scanning
                 StopScan();
@@ -360,7 +361,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
             if (conOp != null)
             {
-                Log($"Waiting until {conTime} for {conOp}");
+                _logger.LogInformation("Waiting until {Ticks} for {Operation}", conTime, conOp);
                 // we are going to connect
                 if (await Delay(conTime - Environment.TickCount))
                 {
@@ -368,14 +369,14 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                     return true;
                 }
 
-                Log($"Starting {conOp} attempt");
+                _logger.LogInformation("Starting {Operation} attempt", conOp);
                 int endOfAttempt = conOp.StartAttempt();
                 while (await Delay(endOfAttempt - Environment.TickCount))
                 {
                     if (conOp.Task.IsCompleted)
                     {
                         // connection completed one way or another, we can go schedule again
-                        Log($"{conOp} complete");
+                        _logger.LogInformation("{Operation} complete", conOp);
                         return true;
                     }
                     if (!conOp.IsConnecting)
@@ -385,7 +386,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                     }
                 }
                 // abort connection attempt and schedule something else
-                Log($"Ending {conOp} attempt");
+                _logger.LogInformation("Ending {Operation} attempt", conOp);
                 await conOp.EndAttempt();
                 return true;
             }
@@ -395,7 +396,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             {
                 for (; ; )
                 {
-                    Log("Starting scanner");
+                    _logger.LogInformation("Starting scanner");
                     StartScan();
                     for (; ; )
                     {
@@ -409,7 +410,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
                             break;
                         }
                     }
-                    Log("No event, interrupting scan for a while");
+                    _logger.LogInformation("No event, interrupting scan for a while");
                     StopScan();
                     if (await Delay(ScanInterruptionTime))
                     {
