@@ -39,7 +39,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
         {
             _device = device;
             _context = SynchronizationContext.Current;
-            _loggerId = $"BLEConnection:{device.Uuid}:{num}";
+            _loggerId = $"BLEConnection:{device.Uuid.RightHalf:X12}:{num}";
             _logger = device.Adapter._loggerFactory.CreateLogger(_loggerId);
             _q = new OperationQueue(_logger);
         }
