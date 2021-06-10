@@ -17,6 +17,7 @@ namespace triaxis.Xamarin.BluetoothLE
 
         public OperationQueue(ILogger logger, TaskScheduler scheduler = null)
         {
+            _logger = logger;
             _scheduler = scheduler ?? TaskScheduler.FromCurrentSynchronizationContext();
         }
 
