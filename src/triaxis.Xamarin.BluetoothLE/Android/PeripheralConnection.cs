@@ -120,7 +120,6 @@ namespace triaxis.Xamarin.BluetoothLE.Android
 
         internal abstract class Operation<T> : BluetoothLE.Operation<T>
         {
-            static int s_num;
             public PeripheralConnection _owner;
             protected BluetoothGatt _gatt => _owner._gatt;
             private ILogger __logger;
@@ -493,7 +492,7 @@ namespace triaxis.Xamarin.BluetoothLE.Android
             }
             else
             {
-                _logger.LogWarning("OnDescriptorWrite({Status}) called without request");
+                _logger.LogWarning("OnDescriptorWrite({Status}) called without request", status);
             }
         }
 

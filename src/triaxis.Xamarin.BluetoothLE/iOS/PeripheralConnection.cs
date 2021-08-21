@@ -140,7 +140,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 
             protected virtual void Preflight()
             {
-                if (!_peripheral.IsConnected)
+                if (_peripheral.State != CBPeripheralState.Connected)
                     throw new InvalidOperationException("Not connected");
             }
 
@@ -154,7 +154,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             protected override void Preflight()
             {
-                if (_peripheral.IsConnected)
+                if (_peripheral.State == CBPeripheralState.Connected)
                     throw new InvalidOperationException("Already connected");
             }
 

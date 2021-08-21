@@ -38,13 +38,13 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
         {
             get
             {
-                switch (_central.State)
+                switch (((CBManager)_central).State)
                 {
-                    case CBCentralManagerState.PoweredOff: return AdapterState.Off;
-                    case CBCentralManagerState.PoweredOn: return AdapterState.On;
-                    case CBCentralManagerState.Resetting: return AdapterState.Transitioning;
-                    case CBCentralManagerState.Unauthorized: return AdapterState.Unauthorized;
-                    case CBCentralManagerState.Unsupported: return AdapterState.Unsupported;
+                    case CBManagerState.PoweredOff: return AdapterState.Off;
+                    case CBManagerState.PoweredOn: return AdapterState.On;
+                    case CBManagerState.Resetting: return AdapterState.Transitioning;
+                    case CBManagerState.Unauthorized: return AdapterState.Unauthorized;
+                    case CBManagerState.Unsupported: return AdapterState.Unsupported;
                     default: return AdapterState.Unknown;
                 }
             }

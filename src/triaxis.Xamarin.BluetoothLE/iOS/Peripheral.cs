@@ -44,7 +44,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
             _connections.Add(con);
             if (_connections.Count > 1)
             {
-                _logger.LogWarning("{ConnectionCount} parallel connections to the same device detected");
+                _logger.LogWarning("{ConnectionCount} parallel connections to the same device detected", _connections.Count);
             }
             return con.ConnectAsync(timeout);
         }
