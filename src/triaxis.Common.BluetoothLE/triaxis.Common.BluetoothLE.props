@@ -1,0 +1,38 @@
+<Project>
+  <PropertyGroup>
+    <Version>1.0.0-dev</Version>
+    <Authors>ssimek</Authors>
+    <Company>triaxis s.r.o.</Company>
+    <Copyright>&#169; 2021 triaxis s.r.o.</Copyright>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/triaxis-oss/triaxis.Xamarin.BluetoothLE</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OutputPath>bin\$(TargetFramework)\$(Configuration)\</OutputPath>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <CommonSources>$(MSBuildThisFileDirectory)</CommonSources>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(IncludeSymbolsInNuget) == 'true'">
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="System.Reactive" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(CommonSources)/*.cs" />
+    <None Include="$(CommonSources)/Android/*.cs" />
+    <None Include="$(CommonSources)/iOS/*.cs" />
+  </ItemGroup>
+</Project>

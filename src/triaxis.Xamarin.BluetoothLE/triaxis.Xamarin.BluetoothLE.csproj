@@ -1,56 +1,29 @@
 <Project Sdk="MSBuild.Sdk.Extras/2.1.2">
+  <Import Project="../triaxis.Common.BluetoothLE/triaxis.Common.BluetoothLE.props" />
+
   <PropertyGroup>
     <TargetFrameworks>MonoAndroid10.0;netstandard2.1;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
-    <Version>1.0.0-dev</Version>
-    <Authors>ssimek</Authors>
-    <Company>triaxis s.r.o.</Company>
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>
-    <Copyright>&#169; 2021 triaxis s.r.o.</Copyright>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <RepositoryUrl>https://github.com/triaxis-oss/triaxis.Xamarin.BluetoothLE</RepositoryUrl>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <OutputPath>bin\$(TargetFramework)\$(Configuration)\</OutputPath>
-    <EnableDefaultItems>false</EnableDefaultItems>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
+    <DefineConstants>$(DefineConstants);XAMARIN</DefineConstants>
   </PropertyGroup>
-
-  <PropertyGroup Condition="$(IncludeSymbolsInNuget) == 'true'">
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="../../LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
-    <PackageReference Include="System.Reactive" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('MonoAndroid'))">
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Compile Include="Android/*.cs" />
+    <Compile Include="$(CommonSources)/Android/*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('Xamarin.iOS'))">
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Xamarin.iOS" />
-    <Compile Include="iOS/*.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="*.cs" />
-    <None Include="Android/*.cs" />
-    <None Include="iOS/*.cs" />
+    <Compile Include="$(CommonSources)/iOS/*.cs" />
   </ItemGroup>
 </Project>
