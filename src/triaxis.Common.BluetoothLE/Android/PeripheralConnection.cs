@@ -78,6 +78,12 @@ namespace triaxis.Maui.BluetoothLE.Android
                 _owner = this,
             });
 
+        public Task<IList<IService>> GetServicesAsync(params ServiceUuid[] hint)
+            => _q.EnqueueOnce(ref _tServics, new GetServicesOperation
+            {
+                _owner = this,
+            });
+
         public Task<int> RequestMaximumWriteAsync(int request)
             => _q.Enqueue(new MaxWriteRequestOperation
             {

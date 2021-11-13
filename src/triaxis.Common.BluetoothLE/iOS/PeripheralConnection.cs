@@ -70,6 +70,13 @@ namespace triaxis.Maui.BluetoothLE.iOS
                 _owner = this,
             });
 
+        public Task<IList<IService>> GetServicesAsync(params ServiceUuid[] hint)
+            => _q.EnqueueOnce(ref _tServices, new GetServicesOperation
+            {
+                _owner = this,
+                _hint = hint,
+            });
+
         internal Task<IList<ICharacteristic>> GetCharacteristicsAsync(Service service)
             => _q.EnqueueOnce(ref service._tCharacteristics, new GetCharacteristicsOperation
             {
@@ -186,7 +193,19 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
         class GetServicesOperation : Operation<IList<IService>>
         {
-            protected override void Execute() => _peripheral.DiscoverServices();
+            public ServiceUuid[] _hint;
+
+            protected override void Execute()
+            {
+                if (_hint?.Length > 0)
+                {
+                    _peripheral.DiscoverServices(_hint.Select(uuid => CBUUID.FromBytes(uuid.Uuid.ToByteArrayBE())).ToArray());
+                }
+                else
+                {
+                    _peripheral.DiscoverServices();
+                }
+            }
         }
 
         class GetCharacteristicsOperation : Operation<IList<ICharacteristic>>

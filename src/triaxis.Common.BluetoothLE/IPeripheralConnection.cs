@@ -25,6 +25,11 @@ namespace triaxis.Maui.BluetoothLE
         Task<IList<IService>> GetServicesAsync();
 
         /// <summary>
+        /// Attempts to retrieve service provided by the peripheral, using the specified hint
+        /// </summary>
+        Task<IList<IService>> GetServicesAsync(params ServiceUuid[] hint);
+
+        /// <summary>
         /// Requests an increased MTU (maximum transfer unit) from the connected peripheral
         /// </summary>
         /// <returns>MTU confirmed by the connected peripheral</returns>
