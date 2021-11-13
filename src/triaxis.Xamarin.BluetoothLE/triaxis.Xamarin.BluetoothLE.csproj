@@ -5,7 +5,7 @@
     <TargetFrameworks>MonoAndroid10.0;netstandard2.1;Xamarin.iOS10</TargetFrameworks>
     <PackageId>triaxis.Xamarin.BluetoothLE</PackageId>
     <Description>Simple cross-platform Bluetooth LE library for Xamarin</Description>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>9.0</LangVersion>
     <DefineConstants>$(DefineConstants);XAMARIN</DefineConstants>
   </PropertyGroup>
 

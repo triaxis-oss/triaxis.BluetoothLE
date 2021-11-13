@@ -9,7 +9,7 @@ defaults:
 jobs:
   build:
     name: Build and Test
-    runs-on: macos-latest
+    runs-on: [ self-hosted, macos, dotnet ]
     env:
       DOTNET_NOLOGO: true
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
@@ -26,27 +26,31 @@ jobs:
         uses: triaxis-oss/dotnet-set-version@v1
         id: get-version
         with:
-          project: src/triaxis.Xamarin.BluetoothLE/triaxis.Xamarin.BluetoothLE.csproj
+          project: src/triaxis.Common.BluetoothLE/triaxis.Common.BluetoothLE.props
 
       - name: Restore NuGet Packages
         run: dotnet restore
 
       - name: Build Release
         if: steps.get-version.outputs.is-release == 'true'
-        run: msbuild /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true" /m
+        run: |
+          msbuild triaxis.Xamarin.BluetoothLE /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;PackageOutputPath=../packages" /m
+          dotnet build triaxis.Maui.BluetoothLE -c Release "/p:ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;PackageOutputPath=../packages"
 
       - name: Build Development
         if: steps.get-version.outputs.is-release != 'true'
-        run: msbuild /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;IncludeSymbolsInNuget=true" /m
+        run: |
+          msbuild triaxis.Xamarin.BluetoothLE /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;IncludeSymbolsInNuget=true;PackageOutputPath=../packages" /m
+          dotnet build triaxis.Maui.BluetoothLE -c Release "/p:ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;IncludeSymbolsInNuget=true;PackageOutputPath=../packages"
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: packages
-          path: src/triaxis.Xamarin.BluetoothLE/bin/Release/*nupkg
+          path: src/packages/*nupkg
 
       - name: Test
-        run: dotnet test --no-build -c Release -v Normal -l "junit;logFilePath=test-results.xml"
+        run: dotnet test triaxis.Xamarin.BluetoothLE.Tests -c Release -v Normal -l "junit;logFilePath=test-results.xml"
 
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v2
@@ -56,7 +60,7 @@ jobs:
 
   publish-test-results:
     name: Publish test results
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, macos, dotnet ]
     needs: build
     steps:
       - name: Fetch Test Artifacts
@@ -65,15 +69,14 @@ jobs:
           name: test-results
 
       - name: Publish Test Results
-        uses: docker://ghcr.io/enricomi/publish-unit-test-result-action:latest
+        uses: enricomi/publish-unit-test-result-action/composite@v1
         if: always()
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           files: '**/test-results.xml'  
 
   publish-nuget:
     name: Publish NuGet
-    runs-on: macos-latest
+    runs-on: [ self-hosted, macos, dotnet ]
     env:
       DOTNET_NOLOGO: true
     needs: build
