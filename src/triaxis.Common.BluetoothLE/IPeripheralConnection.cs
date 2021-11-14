@@ -20,6 +20,11 @@ namespace triaxis.Maui.BluetoothLE
         Task DisconnectAsync();
 
         /// <summary>
+        /// Retrieves full device name
+        /// </summary>
+        Task<string> GetDeviceNameAsync();
+
+        /// <summary>
         /// Retrieves all services provided by the peripheral
         /// </summary>
         Task<IList<IService>> GetServicesAsync();

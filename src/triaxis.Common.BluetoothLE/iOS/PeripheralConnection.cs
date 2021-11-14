@@ -64,6 +64,9 @@ namespace triaxis.Maui.BluetoothLE.iOS
             });
         }
 
+        public Task<string> GetDeviceNameAsync()
+            => Task.FromResult(_peripheral.Name);
+
         public Task<IList<IService>> GetServicesAsync()
             => _q.EnqueueOnce(ref _tServices, new GetServicesOperation
             {

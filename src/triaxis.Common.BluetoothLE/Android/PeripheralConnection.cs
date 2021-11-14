@@ -72,6 +72,17 @@ namespace triaxis.Maui.BluetoothLE.Android
             });
         }
 
+        public async Task<string> GetDeviceNameAsync()
+        {
+            var characteristic = await this.FindServiceCharacteristicAsync(ServiceCharacteristicUuid.GenericAccess.DeviceName);
+            if (characteristic == null)
+            {
+                return null;
+            }
+
+            return Encoding.UTF8.GetString(await characteristic.ReadAsync());
+        }
+
         public Task<IList<IService>> GetServicesAsync()
             => _q.EnqueueOnce(ref _tServics, new GetServicesOperation
             {
