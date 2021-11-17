@@ -12,7 +12,7 @@ namespace triaxis.Maui.BluetoothLE
     /// <summary>
     /// Represents an active connection to a Bluetooth LE Peripheral
     /// </summary>
-    public interface IPeripheralConnection
+    public interface IPeripheralConnection : IAsyncDisposable
     {
         /// <summary>
         /// Disconnects from the peripheral

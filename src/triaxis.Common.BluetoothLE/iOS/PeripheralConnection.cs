@@ -64,6 +64,9 @@ namespace triaxis.Maui.BluetoothLE.iOS
             });
         }
 
+        ValueTask IAsyncDisposable.DisposeAsync()
+            => new ValueTask(DisconnectAsync());
+
         public Task<string> GetDeviceNameAsync()
             => Task.FromResult(_peripheral.Name);
 
