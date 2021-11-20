@@ -207,7 +207,17 @@ namespace triaxis.Maui.BluetoothLE.iOS
         {
             protected override void Preflight() { }
 
-            protected override void Execute() => _owner._central.CancelPeripheralConnection(_peripheral);
+            protected override void Execute()
+            {
+                if (_peripheral.State == CBPeripheralState.Disconnected)
+                {
+                    SetResult(null);
+                }
+                else
+                {
+                    _owner._central.CancelPeripheralConnection(_peripheral);
+                }
+            }
         }
 
         class GetServicesOperation : Operation<IList<IService>>
