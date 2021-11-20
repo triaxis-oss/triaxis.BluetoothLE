@@ -35,6 +35,8 @@ namespace triaxis.Maui.BluetoothLE.Android
 
         public event Action<BluetoothGattCharacteristic, byte[]> CharacteristicChanged;
         public event EventHandler<Exception> Closed;
+        
+        public bool IsConnected => _gatt != null;
 
         static readonly byte[] s_enableNotification = BluetoothGattDescriptor.EnableNotificationValue.ToArray();
         static readonly byte[] s_disableNotification = BluetoothGattDescriptor.DisableNotificationValue.ToArray();

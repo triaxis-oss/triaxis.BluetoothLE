@@ -35,8 +35,6 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
         public IObservable<byte[]> Notifications() => Observable.Create<byte[]>(async (observer) =>
         {
-            bool connected = true;
-
             void HandleData(CBCharacteristic ch, byte[] val)
             {
                 if (ch == _characteristic)
@@ -45,8 +43,6 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
             void HandleClosed(object sender, Exception err)
             {
-                connected = false;
-
                 if (err == null)
                     observer.OnCompleted();
                 else
@@ -64,7 +60,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
                 try
                 {
-                    if (connected)
+                    if (_service.Connection.IsConnected)
                     {
                         await _service.Connection.SetCharacteristicNotificationsAsync(this, false);
                     }

@@ -46,6 +46,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
         public Adapter Adapter => _adapter;
         public CBPeripheral Peripheral => _peripheral;
         public CBCentralManager CentralManager => _central;
+        public bool IsConnected => _peripheral.State == CBPeripheralState.Connected;
 
         public Task<IPeripheralConnection> ConnectAsync(int timeout)
             => _q.Enqueue(new ConnectOperation

@@ -46,8 +46,6 @@ namespace triaxis.Maui.BluetoothLE.Android
 
         public IObservable<byte[]> Notifications() => Observable.Create<byte[]>(async (observer) =>
             {
-                bool connected = true;
-
                 void HandleData(BluetoothGattCharacteristic ch, byte[] val)
                 {
                     if (ch == _characteristic)
@@ -56,8 +54,6 @@ namespace triaxis.Maui.BluetoothLE.Android
 
                 void HandleClosed(object sender, Exception err)
                 {
-                    connected = false;
-
                     if (err == null)
                         observer.OnCompleted();
                     else
@@ -75,7 +71,7 @@ namespace triaxis.Maui.BluetoothLE.Android
 
                     try
                     {
-                        if (connected)
+                        if (_service.Connection.IsConnected)
                         {
                             await _service.Connection.DisableCharacteristicNotificationsAsync(this);
                         }
