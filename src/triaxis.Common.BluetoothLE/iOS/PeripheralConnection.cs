@@ -16,7 +16,7 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 namespace triaxis.Maui.BluetoothLE.iOS
 #endif
 {
-    class PeripheralConnection : CBPeripheralDelegate, IPeripheralConnection
+    class PeripheralConnection : CBPeripheralDelegate
     {
         private readonly Peripheral _device;
         private readonly Adapter _adapter;
@@ -25,6 +25,8 @@ namespace triaxis.Maui.BluetoothLE.iOS
         private readonly OperationQueue _q;
         private readonly string _loggerId;
         internal readonly ILogger _logger;
+        private int _refCount;
+        private Task _tConnect;
         Task _tDisconnect;
         Task<IList<IService>> _tServices;
 
@@ -48,14 +50,27 @@ namespace triaxis.Maui.BluetoothLE.iOS
         public CBCentralManager CentralManager => _central;
         public bool IsConnected => _peripheral.State == CBPeripheralState.Connected;
 
-        public Task<IPeripheralConnection> ConnectAsync(int timeout)
-            => _q.Enqueue(new ConnectOperation
+        public Task ConnectAsync(int timeout)
+        {
+            if (Interlocked.Increment(ref _refCount) == 1)
+            {
+                _tConnect = _q.Enqueue(new ConnectOperation
             {
                 _owner = this,
             }, timeout);
+            }
+
+            return _tConnect;
+        }
 
         public Task DisconnectAsync()
         {
+            switch (Interlocked.Decrement(ref _refCount))
+            {
+                case <0: throw new InvalidProgramException();
+                case >0: return Task.CompletedTask;
+            }
+
             if (_q.TryGetCurrent<ConnectOperation>(out var con))
                 con.Cancel();
 
@@ -64,9 +79,6 @@ namespace triaxis.Maui.BluetoothLE.iOS
                 _owner = this,
             });
         }
-
-        ValueTask IAsyncDisposable.DisposeAsync()
-            => new ValueTask(DisconnectAsync());
 
         public Task<string> GetDeviceNameAsync()
             => Task.FromResult(_peripheral.Name);
@@ -168,7 +180,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
                 => default;
         }
 
-        class ConnectOperation : Operation<IPeripheralConnection>
+        class ConnectOperation : Operation<PeripheralConnection>
         {
             protected override void Preflight()
             {
@@ -191,7 +203,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
                 }, true);
         }
 
-        class DisconnectOperation : Operation<IPeripheralConnection>
+        class DisconnectOperation : Operation<PeripheralConnection>
         {
             protected override void Preflight() { }
 
