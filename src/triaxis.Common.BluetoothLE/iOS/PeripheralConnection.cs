@@ -90,7 +90,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
             });
 
         public Task<IList<IService>> GetServicesAsync(params ServiceUuid[] hint)
-            => _q.EnqueueOnce(ref _tServices, new GetServicesOperation
+            => _tServices ?? _q.Enqueue(new GetServicesOperation
             {
                 _owner = this,
                 _hint = hint,
