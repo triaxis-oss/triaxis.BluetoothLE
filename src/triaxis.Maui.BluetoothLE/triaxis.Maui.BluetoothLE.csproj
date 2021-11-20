@@ -6,6 +6,8 @@
     <PackageId>triaxis.Maui.BluetoothLE</PackageId>
     <Description>Simple cross-platform Bluetooth LE library for .NET MAUI</Description>
     <UseMaui>true</UseMaui>
+    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net6.0-ios'">11.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net6.0-android'">23.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>
