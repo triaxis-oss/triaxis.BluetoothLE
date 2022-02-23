@@ -8,6 +8,7 @@
     <UseMaui>true</UseMaui>
     <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net6.0-ios'">11.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net6.0-android'">23.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net6.0-maccatalyst'">14.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
+    <Compile Include="$(CommonSources)/iOS/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.Contains('-maccatalyst'))">
     <Compile Include="$(CommonSources)/iOS/*.cs" />
   </ItemGroup>
 </Project>

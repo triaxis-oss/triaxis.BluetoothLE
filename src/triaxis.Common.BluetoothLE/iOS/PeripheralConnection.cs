@@ -368,7 +368,11 @@ namespace triaxis.Maui.BluetoothLE.iOS
             }
         }
 
+#if XAMARIN
         public override void DiscoveredCharacteristic(CBPeripheral peripheral, CBService service, NSError error)
+#else
+        public override void DiscoveredCharacteristics(CBPeripheral peripheral, CBService service, NSError error)
+#endif
         {
             if (_q.TryGetCurrent<GetCharacteristicsOperation>(out var op) && op._service.CBService == service)
             {
