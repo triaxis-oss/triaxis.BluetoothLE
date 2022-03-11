@@ -241,11 +241,11 @@ namespace triaxis.Maui.BluetoothLE.iOS
             private readonly byte[] _data;
             private bool _response;
 
-            public WriteCharacteristicOperation(Characteristic characteristic, byte[] data, bool response)
+            public WriteCharacteristicOperation(Characteristic characteristic, byte[] data, bool withoutResponse)
                 : base(characteristic)
             {
                 _data = data;
-                _response = response;
+                _response = !withoutResponse;
             }
 
             protected override void Start()
