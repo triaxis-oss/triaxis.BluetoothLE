@@ -2,10 +2,6 @@ name: Build, Test, Publish
 on:
   - push
 
-defaults:
-  run:
-    working-directory: src
-
 jobs:
   build:
     name: Build and Test
@@ -13,6 +9,9 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+    defaults:
+      run:
+        working-directory: src
 
     outputs:
       is-release: ${{ steps.get-version.outputs.is-release }}
@@ -67,12 +66,13 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: test-results
+          path: ${{runner.temp}}/res
 
       - name: Publish Test Results
         uses: enricomi/publish-unit-test-result-action/composite@v1
         if: always()
         with:
-          files: '**/test-results.xml'  
+          files: ${{runner.temp}}/res/**/test-results.xml
 
   publish-nuget:
     name: Publish NuGet
@@ -80,17 +80,18 @@ jobs:
     env:
       DOTNET_NOLOGO: true
     needs: build
+
     steps:
       - name: Fetch Package Artifacts
         uses: actions/download-artifact@v2
         with:
           name: packages
-          path: src
+          path: ${{runner.temp}}/packages
 
       - name: Publish NuGet Packages
         if: needs.build.outputs.is-release == 'true'
-        run: dotnet nuget push *.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+        run: dotnet nuget push ${{runner.temp}}/packages/*.nupkg -s nuget.org -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
 
       - name: Publish GitHub Packages
         if: needs.build.outputs.is-release != 'true'
-        run: dotnet nuget push *.nupkg -s https://${{github.actor}}@nuget.pkg.github.com/${{github.repository_owner}} -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
+        run: dotnet nuget push ${{runner.temp}}/packages/*.nupkg -s https://${{github.actor}}@nuget.pkg.github.com/${{github.repository_owner}} -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
