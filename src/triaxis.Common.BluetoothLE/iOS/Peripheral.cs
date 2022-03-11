@@ -1,13 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using CoreBluetooth;
-using Foundation;
 using Microsoft.Extensions.Logging;
-using UIKit;
 
 #if XAMARIN
 namespace triaxis.Xamarin.BluetoothLE.iOS
@@ -15,68 +9,76 @@ namespace triaxis.Xamarin.BluetoothLE.iOS
 namespace triaxis.Maui.BluetoothLE.iOS
 #endif
 {
-    class Peripheral : IPeripheral
+    /// <summary>
+    /// Wraps a single <see cref="CBPeripheral" /> instance, serializing
+    /// all operations using an operation queue and handling its
+    /// <see cref="CBPeripheralDelegate" /> callbacks. Also tracks all
+    /// connections to the peripheral.
+    /// </summary>
+    partial class Peripheral
     {
-        private readonly Adapter _adapter;
-        private readonly Uuid _uuid;
+        private readonly PeripheralWrapper _peripheral;
+        private readonly CBPeripheral _cbPeripheral;
+        private readonly OperationQueue _q;
         private readonly ILogger _logger;
-        private CBPeripheral _peripheral;
-        private PeripheralConnection _connection;
+
+        /// <summary>
+        /// Currently active connection that can be safely reused for new connection instances.
+        /// </summary>
+        private Connection _connection;
         private int _connNum;
 
-        public Peripheral(Adapter adapter, Uuid uuid, CBPeripheral peripheral)
-        {
-            _logger = adapter._loggerFactory.CreateLogger($"BLEPeripheral:{uuid}");
-            _adapter = adapter;
-            _uuid = uuid;
-            _peripheral = peripheral;
-        }
-
-        internal void UpdateCBPeripheral(CBPeripheral peripheral)
+        public Peripheral(PeripheralWrapper peripheral, CBPeripheral cbPeripheral, int num)
         {
             _peripheral = peripheral;
+            _cbPeripheral = cbPeripheral;
+            cbPeripheral.Delegate = this;
+            var loggerId = $"BLEPeripheral:{peripheral.Uuid}:{num}";
+            _logger = peripheral.Adapter.CreateLogger(loggerId);
+            _q = new OperationQueue(_logger);
         }
 
-        public Adapter Adapter => _adapter;
-        public ref readonly Uuid Uuid => ref _uuid;
-        public CBPeripheral CBPeripheral => _peripheral;
+        public CBPeripheral CBPeripheral => _cbPeripheral;
+        public PeripheralWrapper Wrapper => _peripheral;
+        public Adapter Adapter => _peripheral.Adapter;
+        public CBCentralManager CentralManager => Adapter.CentralManager;
 
-        public void InvalidateServiceCache() { }    // not available on iOS
-
-        public Task<IPeripheralConnection> ConnectAsync(int timeout)
+        private Task<T> Enqueue<T>(Operation<T> op, int timeout = -1)
         {
-            if (_connection != null && _connection.Peripheral == _peripheral)
+            op.Bind(this);
+            return _q.Enqueue(op, timeout);
+        }
+
+        internal Task<IPeripheralConnection> ConnectAsync(int timeout)
+        {
+            if (_connection is Connection con)
             {
                 _logger.LogWarning("Reusing previous connection");
             }
             else
             {
-                _connection = new PeripheralConnection(this, ++_connNum);
+                _connection = con = new Connection(this, ++_connNum);
             }
 
-            return new PeripheralConnectionInstance(_connection).ConnectAsync(timeout);
+            return con.CreateInstance(timeout).ConnectTask;
         }
 
-        public Task<IPeripheralConnection> ConnectPatternAsync(IAdvertisement reference, int period, int before, int after, int attempts)
+        private void CBConnect()
         {
-            // pattern connect has no benefit on iOS,
-            // the system is able to scan and connect to multiple devices in parallel
-            return ConnectAsync(before + period * attempts + after);
+            CentralManager.ConnectPeripheral(_cbPeripheral);
         }
 
-        internal void Connected(CBPeripheral peripheral)
+        private void CBDisconnect()
         {
-            _connection?.Connected(peripheral);
+            CentralManager.CancelPeripheralConnection(_cbPeripheral);
         }
 
-        internal void ConnectionFailed(CBPeripheral peripheral, NSError error)
+        /// <summary>
+        /// Called when the OS-level CBPeripheral changes
+        /// </summary>
+        internal void OnPeripheralLost()
         {
-            Interlocked.Exchange(ref _connection, null)?.ConnectionFailed(peripheral, error);
-        }
-
-        internal void Disconnected(CBPeripheral peripheral, NSError error)
-        {
-            Interlocked.Exchange(ref _connection, null)?.Disconnected(peripheral, error);
+            Enqueue(new PeripheralLostOperation());
         }
     }
 }

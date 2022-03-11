@@ -64,7 +64,7 @@ namespace triaxis.Maui.BluetoothLE.Android
         {
             if (_q.TryGetCurrent<ConnectOperation>(out var con))
             {
-                con.Cancel();
+                con.SetCanceled();
                 con.Dequeue();
             }
 
@@ -163,16 +163,14 @@ namespace triaxis.Maui.BluetoothLE.Android
 
             public new bool SetResult(T result)
                 => base.SetResult(result);
+            public new bool SetCanceled()
+                => base.SetCanceled();
 
-            public override CancellationTokenRegistration Start(CancellationToken cancellationToken)
+            protected override void Start()
             {
                 Preflight();
                 if (!Execute())
                     SetException(BaseErrorMessage);
-
-                return !Task.IsCompleted && cancellationToken.CanBeCanceled ?
-                    SetupCancellation(cancellationToken) :
-                    default;
             }
 
             protected virtual void Preflight()
@@ -180,9 +178,6 @@ namespace triaxis.Maui.BluetoothLE.Android
                 if (_gatt == null)
                     throw new InvalidOperationException("Not connected");
             }
-
-            protected virtual CancellationTokenRegistration SetupCancellation(CancellationToken token)
-                => default;
 
             protected abstract bool Execute();
             protected abstract string BaseErrorMessage { get; }

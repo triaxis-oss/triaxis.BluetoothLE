@@ -14,17 +14,17 @@ namespace triaxis.Maui.BluetoothLE.iOS
 {
     class Advertisement : IAdvertisement
     {
-        readonly Peripheral _peripheral;
-        readonly int _rssi;
-        readonly int _txPower;
-        readonly DateTime _timestamp;
-        readonly byte[] _localName;
-        readonly byte[] _manufacturerData;
-        readonly ServiceUuid[] _services;
+        private readonly IPeripheral _peripheral;
+        private readonly int _rssi;
+        private readonly int _txPower;
+        private readonly DateTime _timestamp;
+        private readonly byte[] _localName;
+        private readonly byte[] _manufacturerData;
+        private readonly ServiceUuid[] _services;
         
-        public Advertisement(Peripheral device, NSDictionary advertisementData, NSNumber rssi)
+        public Advertisement(IPeripheral peripheral, NSDictionary advertisementData, NSNumber rssi)
         {
-            _peripheral = device;
+            _peripheral = peripheral;
             _rssi = rssi.Int32Value;
             if (advertisementData[CBAdvertisement.DataLocalNameKey] is NSString name)
                 _localName = Encoding.UTF8.GetBytes(name);

@@ -26,5 +26,10 @@ namespace triaxis.Maui.BluetoothLE.iOS
             var bytes = uuid.GetBytes();
             return Uuid.FromBE(bytes);
         }
+
+        public static Exception ToException(this NSError error)
+        {
+            return error == null ? null : new NSErrorException(error);
+        }
     }
 }

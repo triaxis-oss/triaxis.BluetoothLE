@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,27 +12,55 @@ namespace triaxis.Xamarin.BluetoothLE
 namespace triaxis.Maui.BluetoothLE
 #endif
 {
-    abstract class Operation<T> : IOperation<T>
+    class OperationBase
     {
-        TaskCompletionSource<T> _tcs = new TaskCompletionSource<T>();
+        private static int s_id;
+
+        public OperationBase()
+        {
+            LogScope = new() { ["Operation"] = this, ["OperationId"] = OperationId };
+        }
+
+        public int OperationId { get; } = Interlocked.Increment(ref s_id);
+        protected Dictionary<string, object> LogScope { get; }
+
+        public override string ToString()
+        {
+            return $"{GetType().Name}[{OperationId}]";
+        }
+    }
+
+    abstract class Operation<T> : OperationBase, IOperation<T>
+    {
+        private readonly TaskCompletionSource<T> _tcs = new TaskCompletionSource<T>();
+        private OperationQueue _q;
 
         public Task<T> Task => _tcs.Task;
         Task IOperation.Task => Task;
+
+        protected ILogger Logger => _q?.Logger;
 
         protected bool SetException(Exception e) => _tcs.TrySetException(e);
         protected bool SetException(string message) => SetException(new BluetoothLEException(message));
         protected bool SetResult(T res) => _tcs.TrySetResult(res);
         protected bool SetCanceled() => _tcs.TrySetCanceled();
 
-        public virtual int StartDelay => 0;
-        public abstract CancellationTokenRegistration Start(CancellationToken cancellationToken);
-        public void Abort(Exception e) => SetException(e);
-        public void Cancel() => SetCanceled();
+        protected virtual int StartDelay => 0;
+        protected abstract void Start();
+        protected virtual void OnTimeout() { }
 
-        public override string ToString()
+        int IOperation.StartDelay => StartDelay;
+        void IOperation.Start(OperationQueue q)
         {
-            return $"{GetType().Name}[{GetHashCode()}]";
+            _q = q;
+            Start();
         }
+
+        void IOperation.OnTimeout() => OnTimeout();
+        IEnumerable<KeyValuePair<string, object>> IOperation.GetScope() => LogScope;
+
+        void IOperation.Abort(Exception e) => SetException(e);
+        void IOperation.Cancel() => SetCanceled();
     }
 
     abstract class Operation : Operation<object>

@@ -27,46 +27,109 @@ namespace triaxis.Maui.BluetoothLE
 
         public Task<T> Enqueue<T>(IOperation<T> op, int timeout = Timeout.Infinite)
         {
+            using var loggerScope = _logger.BeginScope(op.GetScope());
+            var context = ExecutionContext.Capture();
+            void RunInContext(Action a) => ExecutionContext.Run(context, _ => a(), null);
+
             _logger.LogDebug("Enqueuing {Operation}", op);
+
             var prev = _last;
             var t = op.Task;
             _last = t;
-            prev.ContinueWith(async (tPrev) =>
-            {
-                _current = op;
-                int delay = op.StartDelay;
-                if (delay > 0)
-                {
-                    _logger.LogDebug("{Operation} pre-delay {DelayMilliseconds} ms", op, delay);
-                    await Task.Delay(delay);
-                }
 
+            prev = prev.ContinueWith(_ => _current = op, TaskContinuationOptions.ExecuteSynchronously);
+
+            int delay = op.StartDelay;
+            if (delay > 0)
+            {
+                // insert a delay task before the actual one
+                prev = prev.ContinueWith(_ =>
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        RunInContext(() => _logger.LogDebug("{Operation} pre-delay {DelayMilliseconds} ms", op, delay));
+                    }
+
+                    return Task.Delay(delay);
+                });
+            }
+
+            prev.ContinueWith(_ => RunInContext(() =>
+            {
                 try
                 {
                     if (timeout != Timeout.Infinite)
                     {
                         _logger.LogDebug("{Operation} starting with {TimeoutMilliseconds} ms timeout", op, timeout);
-                        var cts = new CancellationTokenSource(timeout);
-                        op.Start(cts.Token);
-                        _ = t.ContinueWith(_ =>
+
+                        var cts = new CancellationTokenSource();
+                        var timeoutTask = Task.Delay(timeout, cts.Token);
+
+                        // when the timeout task completes without being canceled,
+                        // notify the operation of the timeout
+                        timeoutTask.ContinueWith(_ => RunInContext(() =>
                         {
+                            try
+                            {
+                                if (!t.IsCompleted)
+                                {
+                                    op.OnTimeout();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                _logger.LogError(e, "{Operation} OnTimeout handler crashed", op);
+                            }
+                            if (!t.IsCompleted)
+                            {
+                                op.Abort(new TimeoutException());
+                            }
+                        }), default, TaskContinuationOptions.NotOnCanceled, _scheduler);
+
+                        // get rid of the timeout task when the operation task completes
+                        t.ContinueWith(_ =>
+                        {
+                            cts.Cancel();
                             cts.Dispose();
                         }, TaskContinuationOptions.ExecuteSynchronously);
                     }
                     else
                     {
                         _logger.LogDebug("{Operation} starting without timeout", op);
-                        op.Start(default);
                     }
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        t.ContinueWith(_ => RunInContext(() =>
+                        {
+                            if (t.IsCompletedSuccessfully)
+                            {
+                                _logger.LogDebug("{Operation} completed successfully with result {Result}", op, t.Result);
+                            }
+                            else if (t.IsCanceled)
+                            {
+                                _logger.LogDebug("{Operation} has been canceled", op);
+                            }
+                            else
+                            {
+                                _logger.LogDebug(t.Exception, "{Operation} has failed with an error", op);
+                            }
+                        }), TaskContinuationOptions.ExecuteSynchronously);
+                    }
+
+                    op.Start(this);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "{Operation} crashed on start", op);
                     op.Abort(e);
                 }
-            }, _scheduler);
+            }), _scheduler);
+
             return t;
         }
+
+        public ILogger Logger => _logger;
 
         public Task<T> EnqueueOnce<T>(ref Task<T> instance, IOperation<T> op)
             => instance ?? (instance = Enqueue(op));

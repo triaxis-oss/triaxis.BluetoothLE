@@ -23,12 +23,12 @@ namespace triaxis.Maui.BluetoothLE.iOS
             public HashSet<ServiceUuid> Services { get; set; }
         }
 
-        Platform _owner;
-        CBCentralManager _central;
-        List<ScannerObserver> _scanners = new List<ScannerObserver>();
-        Dictionary<Uuid, Peripheral> _devices = new Dictionary<Uuid, Peripheral>();
-        internal readonly ILoggerFactory _loggerFactory;
-        ILogger _logger;
+        private readonly Platform _owner;
+        private readonly CBCentralManager _central;
+        private readonly List<ScannerObserver> _scanners = new List<ScannerObserver>();
+        private readonly Dictionary<Uuid, PeripheralWrapper> _devices = new Dictionary<Uuid, PeripheralWrapper>();
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
 
         public Adapter(Platform owner, ILoggerFactory loggerFactory)
         {
@@ -37,6 +37,9 @@ namespace triaxis.Maui.BluetoothLE.iOS
             _owner = owner;
             _central = new CBCentralManager(this, null);
         }
+
+        public ILogger CreateLogger(string name)
+            => _loggerFactory.CreateLogger(name);
 
         public AdapterState State
         {
@@ -57,9 +60,9 @@ namespace triaxis.Maui.BluetoothLE.iOS
         public CBCentralManager CentralManager => _central;
 
         public IObservable<IAdvertisement> Scan() => ScanImpl(null);
-        
+
         public IObservable<IAdvertisement> Scan(params ServiceUuid[] services) => ScanImpl(new HashSet<ServiceUuid>(services));
-        
+
         private IObservable<IAdvertisement> ScanImpl(HashSet<ServiceUuid> services) => Observable.Create<IAdvertisement>(sub =>
         {
             _scanners.Add(new ScannerObserver { Observer = sub, Services = services });
@@ -103,15 +106,20 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
         Peripheral GetPeripheral(CBPeripheral peripheral)
         {
-            var uuid = peripheral.Identifier.ToUuid();
-
-            if (_devices.TryGetValue(uuid, out var bleDevice))
+            if (peripheral.Delegate is Peripheral p)
             {
-                bleDevice.UpdateCBPeripheral(peripheral);
-                return bleDevice;
+                return p;
             }
 
-            return _devices[uuid] = new Peripheral(this, uuid, peripheral);
+            var uuid = peripheral.Identifier.ToUuid();
+
+            if (!_devices.TryGetValue(uuid, out var wrapper))
+            {
+                _devices[uuid] = wrapper = new PeripheralWrapper(this, uuid);
+            }
+
+            peripheral.Delegate = p = wrapper.CreatePeripheral(peripheral);
+            return p;
         }
 
         public override void UpdatedState(CBCentralManager central)
@@ -121,7 +129,7 @@ namespace triaxis.Maui.BluetoothLE.iOS
 
         public override void DiscoveredPeripheral(CBCentralManager central, CBPeripheral peripheral, NSDictionary advertisementData, NSNumber rssi)
         {
-            var adv = new Advertisement(GetPeripheral(peripheral), advertisementData, rssi);
+            var adv = new Advertisement(GetPeripheral(peripheral).Wrapper, advertisementData, rssi);
             foreach (var scanner in _scanners.ToArray())
             {
                 if (scanner.Services == null ||
@@ -135,19 +143,19 @@ namespace triaxis.Maui.BluetoothLE.iOS
         public override void FailedToConnectPeripheral(CBCentralManager central, CBPeripheral peripheral, NSError error)
         {
             _logger.LogDebug("FailedToConnectPeripheral: {Peripheral}, {Error}", peripheral, error);
-            GetPeripheral(peripheral).ConnectionFailed(peripheral, error);
+            GetPeripheral(peripheral).OnConnectionFailed(error);
         }
 
         public override void ConnectedPeripheral(CBCentralManager central, CBPeripheral peripheral)
         {
             _logger.LogDebug("ConnectedPeripheral: {Peripheral}", peripheral);
-            GetPeripheral(peripheral).Connected(peripheral);
+            GetPeripheral(peripheral).OnConnected();
         }
 
         public override void DisconnectedPeripheral(CBCentralManager central, CBPeripheral peripheral, NSError error)
         {
             _logger.LogDebug("DisconnectedPeripheral: {Peripheral}, {Error}", peripheral, error);
-            GetPeripheral(peripheral).Disconnected(peripheral, error);
+            GetPeripheral(peripheral).OnDisconnected(error);
         }
     }
 }

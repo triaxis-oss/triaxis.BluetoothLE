@@ -17,9 +17,13 @@ namespace triaxis.Maui.BluetoothLE
     {
         Task Task { get; }
         int StartDelay { get; }
-        CancellationTokenRegistration Start(CancellationToken cancellationToken);
+        void Start(OperationQueue q);
+        void OnTimeout();
+
         void Abort(Exception e);
         void Cancel();
+
+        IEnumerable<KeyValuePair<string, object>> GetScope();
     }
 
     interface IOperation<T> : IOperation
