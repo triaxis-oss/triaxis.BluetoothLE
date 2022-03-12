@@ -2,7 +2,7 @@
   <Import Project="../triaxis.Common.BluetoothLE/triaxis.Common.BluetoothLE.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net6.0-android;net6.0-ios</TargetFrameworks>
+    <TargetFrameworks>net6.0;net6.0-android;net6.0-ios;net6.0-maccatalyst</TargetFrameworks>
     <PackageId>triaxis.Maui.BluetoothLE</PackageId>
     <Description>Simple cross-platform Bluetooth LE library for .NET MAUI</Description>
     <UseMaui>true</UseMaui>
