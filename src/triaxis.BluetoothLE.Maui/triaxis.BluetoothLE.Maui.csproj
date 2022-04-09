@@ -27,4 +27,8 @@
   <ItemGroup Condition="$(TargetFramework.Contains('-maccatalyst'))">
     <Compile Include="$(CommonSources)/iOS/*.cs" />
   </ItemGroup>
+
+  <ItemGroup Condition=" '$(UseMaui)' == 'true' ">
+    <Compile Include="*.cs" />
+  </ItemGroup>
 </Project>
