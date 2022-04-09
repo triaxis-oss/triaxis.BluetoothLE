@@ -45,7 +45,7 @@ public class MergeNuspec : Task
             {
                 Merge(te, e, e.Name.LocalName == "dependencies" || e.Name.LocalName == "files" || e.Name.LocalName == "frameworkAssemblies");
             }
-            else if (!target.Elements(e.Name).Any(te => te.ToString() == e.ToString()))
+            else if (e.Name.LocalName != "file" || !target.Elements(e.Name).Any(te => te.Attribute("target")?.Value == e.Attribute("target")?.Value))
             {
                 target.Add(e);
             }

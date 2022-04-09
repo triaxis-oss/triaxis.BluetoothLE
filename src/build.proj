@@ -22,7 +22,7 @@
         <MergeNuspec Sources="@(SourceSpecs)" Output="@(MergedSpec)" />
         <Exec Command="nuget pack @(MergedSpec) -OutputDirectory $(PackageOutputPath) -Symbols -SymbolPackageFormat snupkg" />
         <Exec Command="nuget pack @(MergedSpec) -OutputDirectory $(PackageOutputPath)/single" />
-        <Delete Files="@(MergedSpec)" />
+        <Delete Files="@(MergedSpec)" Condition=" '$(PreserveNuspec)' != 'true' " />
     </Target>
 
     <Target Name="Restore">
