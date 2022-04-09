@@ -1,0 +1,59 @@
+<Project>
+    <PropertyGroup>
+        <XamarinProject>triaxis.BluetoothLE.Xamarin/triaxis.BluetoothLE.Xamarin.csproj</XamarinProject>
+        <MauiProject>triaxis.BluetoothLE.Maui/triaxis.BluetoothLE.Maui.csproj</MauiProject>
+        <Configuration>Release</Configuration>
+        <BuildProps>Configuration=$(Configuration);ContinuousIntegrationBuild=true;DeterministicSourcePaths=true</BuildProps>
+        <PackageOutputPath>packages</PackageOutputPath>
+    </PropertyGroup>
+
+    <UsingTask TaskName="MergeNuspec" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup />
+        <Task>
+            <Code Type="Class" Language="cs" Source="build/MergeNuspec.cs" />
+        </Task>
+    </UsingTask>
+
+    <Target Name="Build" DependsOnTargets="BuildXamarin;BuildMaui">
+        <ItemGroup>
+            <SourceSpecs Include="@(MauiNuspec);@(XamarinNuspec)" />
+            <MergedSpec Include="@(OutputPackage->'%(Identity).nuspec')" />
+        </ItemGroup>
+        <MergeNuspec Sources="@(SourceSpecs)" Output="@(MergedSpec)" />
+        <Exec Command="nuget pack @(MergedSpec) -OutputDirectory $(PackageOutputPath) -Symbols -SymbolPackageFormat snupkg" />
+        <Exec Command="nuget pack @(MergedSpec) -OutputDirectory $(PackageOutputPath)/single" />
+        <Delete Files="@(MergedSpec)" />
+    </Target>
+
+    <Target Name="Restore">
+        <MSBuild Projects="triaxis.BluetoothLE.sln" Targets="Restore" />
+    </Target>
+
+    <Target Name="GetXamarinOutputs">
+        <MSBuild Projects="$(XamarinProject)" Targets="_GetOutputItemsFromPack" Properties="$(BuildProps)">
+            <Output TaskParameter="TargetOutputs" ItemName="XamarinOutputs" />
+        </MSBuild>
+        <ItemGroup>
+            <XamarinNuspec Include="@(XamarinOutputs)" Condition="'%(Extension)' == '.nuspec'" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildXamarin" DependsOnTargets="GetXamarinOutputs">
+        <Exec Command="msbuild $(XamarinProject) -t:GenerateNuspec -p:$(BuildProps)" />
+    </Target>
+
+    <Target Name="GetMauiOutputs">
+        <MSBuild Projects="$(MauiProject)" Targets="_GetOutputItemsFromPack" Properties="$(BuildProps)">
+            <Output TaskParameter="TargetOutputs" ItemName="MauiOutputs" />
+        </MSBuild>
+        <ItemGroup>
+            <MauiNuspec Include="@(MauiOutputs)" Condition="'%(Extension)' == '.nuspec'" />
+            <MauiNupkg Include="@(MauiOutputs)" Condition="'%(Extension)' == '.nupkg'" />
+            <OutputPackage Include="@(MauiNupkg->'$(PackageOutputPath)/%(FileName)%(Extension)')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildMaui" DependsOnTargets="GetMauiOutputs">
+        <MSBuild Projects="$(MauiProject)" Targets="GenerateNuspec" Properties="$(BuildProps)" />
+    </Target>
+</Project>

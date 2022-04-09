@@ -25,31 +25,20 @@ jobs:
         uses: triaxis-oss/dotnet-set-version@v1
         id: get-version
         with:
-          project: src/triaxis.Common.BluetoothLE/triaxis.Common.BluetoothLE.props
+          project: src/triaxis.BluetoothLE/triaxis.BluetoothLE.props
 
-      - name: Restore NuGet Packages
-        run: dotnet restore
-
-      - name: Build Release
-        if: steps.get-version.outputs.is-release == 'true'
+      - name: Build
         run: |
-          msbuild triaxis.Xamarin.BluetoothLE /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;PackageOutputPath=../packages" /m
-          dotnet build triaxis.Maui.BluetoothLE -c Release "/p:ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;PackageOutputPath=../packages"
-
-      - name: Build Development
-        if: steps.get-version.outputs.is-release != 'true'
-        run: |
-          msbuild triaxis.Xamarin.BluetoothLE /t:build "/p:Configuration=Release;ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;IncludeSymbolsInNuget=true;PackageOutputPath=../packages" /m
-          dotnet build triaxis.Maui.BluetoothLE -c Release "/p:ContinuousIntegrationBuild=true;DeterministicSourcePaths=true;IncludeSymbolsInNuget=true;PackageOutputPath=../packages"
+          dotnet build build.proj
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: packages
-          path: src/packages/*nupkg
+          path: src/packages/**/*nupkg
 
       - name: Test
-        run: dotnet test triaxis.Xamarin.BluetoothLE.Tests -c Release -v Normal -l "junit;logFilePath=test-results.xml"
+        run: dotnet test triaxis.BluetoothLE.Tests -c Release -v Normal -l "junit;logFilePath=test-results.xml"
 
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v2
@@ -94,4 +83,4 @@ jobs:
 
       - name: Publish GitHub Packages
         if: needs.build.outputs.is-release != 'true'
-        run: dotnet nuget push ${{runner.temp}}/packages/*.nupkg -s https://${{github.actor}}@nuget.pkg.github.com/${{github.repository_owner}} -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate
+        run: dotnet nuget push ${{runner.temp}}/packages/single/*.nupkg -s https://${{github.actor}}@nuget.pkg.github.com/${{github.repository_owner}} -k ${{secrets.GITHUB_TOKEN}} --skip-duplicate

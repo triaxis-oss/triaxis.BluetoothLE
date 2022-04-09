@@ -1,0 +1,45 @@
+<Project>
+  <PropertyGroup>
+    <PackageId>triaxis.BluetoothLE</PackageId>
+    <Description>Simple cross-platform Bluetooth LE library</Description>
+    <Version>1.0.0-dev</Version>
+    <Authors>ssimek</Authors>
+    <Company>triaxis s.r.o.</Company>
+    <Copyright>&#169; 2022 triaxis s.r.o.</Copyright>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/triaxis-oss/triaxis.BluetoothLE</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OutputPath>bin\$(TargetFramework)\$(Configuration)\</OutputPath>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <CommonSources>$(MSBuildThisFileDirectory)</CommonSources>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(IncludeSymbolsInNuget) == 'true'">
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+    <None Include="$(BaseIntermediateOutputPath)/icon.png" Pack="true" PackagePath="$(PackageIcon)" />
+  </ItemGroup>
+
+  <Target Name="DownloadPackageIcon" BeforeTargets="GenerateNuspec">
+    <DownloadFile SourceUrl="https://raw.githubusercontent.com/triaxis-oss/content/main/icon.png" DestinationFolder="$(BaseIntermediateOutputPath)" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="System.Reactive" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(CommonSources)/*.cs" />
+    <None Include="$(CommonSources)/Android/*.cs" />
+    <None Include="$(CommonSources)/iOS/*.cs" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-# triaxis.Xamarin.BluetoothLE
+# triaxis.BluetoothLE
 
 Simple cross-platform Bluetooth LE library
 
@@ -6,4 +6,4 @@ Simple cross-platform Bluetooth LE library
 
 This package is licensed under the [MIT License](./LICENSE.txt)
 
-Copyright &copy; 2020 triaxis s.r.o.
+Copyright &copy; 2022 triaxis s.r.o.
