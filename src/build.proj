@@ -39,7 +39,7 @@
     </Target>
 
     <Target Name="BuildXamarin" DependsOnTargets="GetXamarinOutputs">
-        <Exec Command="msbuild $(XamarinProject) -t:GenerateNuspec -p:$(BuildProps)" />
+        <Exec Command="msbuild $(XamarinProject) -t:GenerateNuspec -p:$(BuildProps)" EnvironmentVariables="MSBuildEnableWorkloadResolver=false" />
     </Target>
 
     <Target Name="GetMauiOutputs">
