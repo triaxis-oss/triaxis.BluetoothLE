@@ -5,6 +5,9 @@ public static class MauiProgram
 	public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
+		builder.Services.AddBluetoothLE();
+		builder.Services.AddSingleton<BluetoothScanner>();
+		builder.Services.AddTransient<MainPage>();
 		builder
 			.UseMauiApp<App>()
 			.ConfigureFonts(fonts =>
