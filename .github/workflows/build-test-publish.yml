@@ -5,7 +5,7 @@ on:
 jobs:
   build:
     name: Build and Test
-    runs-on: [ self-hosted, macos, dotnet ]
+    runs-on: macos-latest
     env:
       DOTNET_NOLOGO: true
       DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
@@ -16,7 +16,7 @@ jobs:
     outputs:
       is-release: ${{ steps.get-version.outputs.is-release }}
       version: ${{ steps.get-version.outputs.version }}
-    
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -26,6 +26,10 @@ jobs:
         id: get-version
         with:
           project: src/triaxis.BluetoothLE/triaxis.BluetoothLE.props
+
+      - name: Install workloads
+        run: |
+          dotnet workload restore triaxis.BluetoothLE.Maui/triaxis.BluetoothLE.Maui.csproj
 
       - name: Build
         run: |
@@ -48,11 +52,11 @@ jobs:
 
   publish-test-results:
     name: Publish test results
-    runs-on: [ self-hosted, macos, dotnet ]
+    runs-on: macos-latest
     needs: build
     steps:
       - name: Fetch Test Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: test-results
           path: ${{runner.temp}}/res
@@ -65,14 +69,14 @@ jobs:
 
   publish-nuget:
     name: Publish NuGet
-    runs-on: [ self-hosted, macos, dotnet ]
+    runs-on: macos-latest
     env:
       DOTNET_NOLOGO: true
     needs: build
 
     steps:
       - name: Fetch Package Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: packages
           path: ${{runner.temp}}/packages
